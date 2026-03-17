@@ -1,0 +1,54 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Post.Application.DTOs;
+
+namespace Post.Application.Interfaces
+{
+    public interface IPostService
+    {
+        Task<ApiResponse<PostDto>> GetPostByIdAsync(Guid postId, Guid? currentUserId = null);
+        Task<ApiResponse<PaginatedResponse<PostDto>>> GetUserPostsAsync(Guid userId, int page, int pageSize, Guid? currentUserId = null);
+        Task<ApiResponse<PaginatedResponse<PostDto>>> GetFeedAsync(Guid currentUserId, int page, int pageSize);
+        Task<ApiResponse<PostDto>> CreateTextPostAsync(Guid userId, CreateTextPostDto dto);
+        Task<ApiResponse<PostDto>> CreateImagePostAsync(Guid userId, CreateImagePostDto dto, IFormFile image);
+        Task<ApiResponse<PostDto>> CreateVoicePostAsync(Guid userId, CreateVoicePostDto dto, IFormFile audio);
+        Task<ApiResponse<PostDto>> UpdatePostAsync(Guid postId, Guid userId, UpdatePostDto dto);
+        Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> LikePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> UnlikePostAsync(Guid postId, Guid userId);
+    }
+
+    public interface ICommentService
+    {
+        Task<ApiResponse<CommentDto>> GetCommentByIdAsync(Guid commentId);
+        Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId);
+        Task<ApiResponse<CommentDto>> CreateCommentAsync(Guid postId, Guid userId, CreateCommentDto dto);
+        Task<ApiResponse<CommentDto>> UpdateCommentAsync(Guid commentId, Guid userId, UpdateCommentDto dto);
+        Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid userId);
+    }
+
+    public interface IMediaService
+    {
+        Task<(string Url, string PublicId)> UploadImageAsync(IFormFile file, string folder = "posts");
+        Task<(string Url, string PublicId, string Duration, List<double> Waveform)> UploadAudioAsync(IFormFile file, string folder = "posts/audio");
+        Task<bool> DeleteImageAsync(string publicId);
+        Task<bool> DeleteAudioAsync(string publicId);
+    }
+
+    public interface IUserProfileHttpClient
+    {
+        Task<UserProfileDto?> GetUserProfileAsync(Guid userId);
+        Task<List<UserProfileDto>> GetUserProfilesAsync(List<Guid> userIds);
+        Task<bool> UpdatePostsCountAsync(Guid userId, int count);
+    }
+
+    public interface IMessagePublisher
+    {
+        Task PublishPostCreatedAsync(Guid postId, Guid userId, string content);
+        Task PublishPostDeletedAsync(Guid postId, Guid userId);
+        Task PublishCommentCreatedAsync(Guid commentId, Guid postId, Guid userId, string content);
+        Task PublishPostLikedAsync(Guid postId, Guid userId);
+    }
+}

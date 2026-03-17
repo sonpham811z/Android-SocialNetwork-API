@@ -1,0 +1,17 @@
+# Bỏ qua tất cả file appsettings có chứa chữ Development hoặc Production
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Secret.json
+# Loại bỏ các folder build
+**/bin/
+**/obj/
+[Bb]in/
+[Oo]bj/
+
+# Loại bỏ các file cấu hình chứa key nhạy cảm
+appsettings.json
+appsettings.*.json
+
+# Nếu dùng Visual Studio
+.vs/
+*.user
