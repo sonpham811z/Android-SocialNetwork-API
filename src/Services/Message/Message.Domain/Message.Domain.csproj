@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MongoDB.Bson for [BsonId], BsonRepresentation attributes on domain entities -->
+    <PackageReference Include="MongoDB.Bson" Version="2.28.0" />
+  </ItemGroup>
+
+</Project>

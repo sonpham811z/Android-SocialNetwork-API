@@ -54,7 +54,7 @@ builder.Services.AddDbContext<PostDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT Secret Key not configured");
 
 builder.Services.AddAuthentication(options =>

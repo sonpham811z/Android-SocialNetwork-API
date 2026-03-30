@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option csharp_namespace = "Message.Infrastructure.GrpcProtos";
+
+package friendship;
+
+// ── Friendship gRPC Service ───────────────────────────────────────────────────
+// This proto defines the contract between Message Service (gRPC client)
+// and Friend Service (gRPC server).
+//
+// Friend Service must:
+//   1. Add Grpc.AspNetCore to Friend.API
+//   2. Add this proto file with GrpcServices="Server"
+//   3. Implement FriendshipService.FriendshipServiceBase
+//   4. Map the gRPC endpoint in Program.cs: app.MapGrpcService<FriendshipGrpcService>()
+// ─────────────────────────────────────────────────────────────────────────────
+
+service FriendshipService {
+  // Returns whether two users have an active mutual friendship.
+  rpc CheckFriendship (CheckFriendshipRequest) returns (CheckFriendshipResponse);
+}
+
+message CheckFriendshipRequest {
+  string user_id_1 = 1;  // Guid as string (e.g. "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  string user_id_2 = 2;
+}
+
+message CheckFriendshipResponse {
+  bool are_friends = 1;
+}

@@ -86,7 +86,7 @@ namespace Identity.Application.Services
         {
             if(await _userRepository.EmailExistsAsync(dto.Email))
             {
-                return ApiResponse<AuthResponseDto>.ErrorResponse("Email already exists");
+                return ApiResponse<UserDto>.ErrorResponse("Email already exists");
             }
 
             //create user

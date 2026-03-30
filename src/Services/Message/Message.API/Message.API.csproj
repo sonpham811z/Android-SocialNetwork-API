@@ -8,12 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore"                        Version="7.3.1"  />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Notification.Application\Notification.Application.csproj" />
-    <ProjectReference Include="..\Notification.Infrastructure\Notification.Infrastructure.csproj" />
+    <ProjectReference Include="..\Message.Application\Message.Application.csproj" />
+    <ProjectReference Include="..\Message.Infrastructure\Message.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
