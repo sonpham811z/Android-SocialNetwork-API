@@ -175,7 +175,10 @@ namespace User.API.Controllers
 
         // Dùng HttpPost cho Batch API là best practice vì list ID truyền lên có thể rất dài,
         // nếu dùng HttpGet truyền qua URL sẽ bị lỗi giới hạn độ dài URL (URL too long).
+        [AllowAnonymous]
         [HttpPost("batch")]
+        [ProducesResponseType(typeof(ApiResponse<List<UserProfileDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetProfilesBatch([FromBody] List<Guid> userIds)
         {
             var result = await _profileService.GetProfilesBatchAsync(userIds);

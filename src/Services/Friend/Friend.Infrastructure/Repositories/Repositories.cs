@@ -23,6 +23,14 @@ namespace Friend.Infrastructure.Repositories
             return _ctx.Friendships.FirstOrDefaultAsync(f => f.UserId1 == u1 && f.UserId2 == u2);
         }
 
+        public Task<Friendship?> GetByUsersIncludingDeletedAsync(Guid userA, Guid userB)
+        {
+            var (u1, u2) = userA < userB ? (userA, userB) : (userB, userA);
+            return _ctx.Friendships
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(f => f.UserId1 == u1 && f.UserId2 == u2);
+        }
+
         public async Task<IEnumerable<Friendship>> GetUserFriendsAsync(Guid userId, int page, int pageSize) =>
             await _ctx.Friendships
                 .Where(f => f.UserId1 == userId || f.UserId2 == userId)

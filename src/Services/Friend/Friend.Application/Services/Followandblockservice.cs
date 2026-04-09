@@ -16,18 +16,15 @@ namespace Friend.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserProfileHttpClient _userClient;
         private readonly IMessagePublisher _publisher;
-        private readonly ICacheService _cache;
 
         public FollowService(
             IUnitOfWork unitOfWork,
             IUserProfileHttpClient userClient,
-            IMessagePublisher publisher,
-            ICacheService cache)
+            IMessagePublisher publisher)
         {
             _unitOfWork = unitOfWork;
             _userClient = userClient;
             _publisher = publisher;
-            _cache = cache;
         }
 
         public async Task<ApiResponse<bool>> FollowAsync(Guid followerId, Guid followeeId)
@@ -59,10 +56,7 @@ namespace Friend.Application.Services
                 await _unitOfWork.Follows.AddAsync(follow);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _cache.RemoveByPrefixAsync($"following:{followerId}");
-                await _cache.RemoveByPrefixAsync($"followers:{followeeId}");
-
-                await _publisher.PublishUserFollowedAsync(followerId, followeeId);
+                // await _publisher.PublishUserFollowedAsync(followerId, followeeId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "Followed successfully.");
             }
@@ -84,10 +78,7 @@ namespace Friend.Application.Services
                 await _unitOfWork.Follows.UpdateAsync(follow);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _cache.RemoveByPrefixAsync($"following:{followerId}");
-                await _cache.RemoveByPrefixAsync($"followers:{followeeId}");
-
-                await _publisher.PublishUserUnfollowedAsync(followerId, followeeId);
+                // await _publisher.PublishUserUnfollowedAsync(followerId, followeeId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "Unfollowed successfully.");
             }
@@ -108,8 +99,8 @@ namespace Friend.Application.Services
 
                 var dtos = follows.Select(f =>
                 {
-                    var profile = profiles.FirstOrDefault(p => p.Id == f.FollowerId)
-                                  ?? new UserProfileDto { Id = f.FollowerId, Name = "Unknown", UserName = "unknown" };
+                    var profile = profiles.FirstOrDefault(p => p.UserId == f.FollowerId)
+                                  ?? new UserProfileDto { UserId = f.FollowerId, Name = "Unknown", UserName = "unknown" };
                     return new FollowDto { Id = f.Id, User = profile, CreatedAt = f.CreatedAt };
                 }).ToList();
 
@@ -135,8 +126,8 @@ namespace Friend.Application.Services
 
                 var dtos = follows.Select(f =>
                 {
-                    var profile = profiles.FirstOrDefault(p => p.Id == f.FolloweeId)
-                                  ?? new UserProfileDto { Id = f.FolloweeId, Name = "Unknown", UserName = "unknown" };
+                    var profile = profiles.FirstOrDefault(p => p.UserId == f.FolloweeId)
+                                  ?? new UserProfileDto { UserId = f.FolloweeId, Name = "Unknown", UserName = "unknown" };
                     return new FollowDto { Id = f.Id, User = profile, CreatedAt = f.CreatedAt };
                 }).ToList();
 
@@ -221,7 +212,7 @@ namespace Friend.Application.Services
                 if (followB != null && !followB.IsDeleted) { followB.Unfollow(); await _unitOfWork.Follows.UpdateAsync(followB); }
 
                 await _unitOfWork.SaveChangesAsync();
-                await _publisher.PublishUserBlockedAsync(blockerId, blockedId);
+                // await _publisher.PublishUserBlockedAsync(blockerId, blockedId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "User blocked successfully.");
             }
@@ -261,8 +252,8 @@ namespace Friend.Application.Services
 
                 var dtos = blocks.Select(b =>
                 {
-                    var profile = profiles.FirstOrDefault(p => p.Id == b.BlockedId)
-                                  ?? new UserProfileDto { Id = b.BlockedId, Name = "Unknown", UserName = "unknown" };
+                    var profile = profiles.FirstOrDefault(p => p.UserId == b.BlockedId)
+                                  ?? new UserProfileDto { UserId = b.BlockedId, Name = "Unknown", UserName = "unknown" };
                     return new BlockDto { Id = b.Id, BlockedUser = profile, CreatedAt = b.CreatedAt };
                 }).ToList();
 

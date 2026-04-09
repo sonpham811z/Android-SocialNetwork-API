@@ -9,6 +9,7 @@ namespace Friend.Domain.Interfaces
     {
         Task<Friendship?> GetByIdAsync(Guid id);
         Task<Friendship?> GetByUsersAsync(Guid userA, Guid userB);
+        Task<Friendship?> GetByUsersIncludingDeletedAsync(Guid userA, Guid userB);
         Task<IEnumerable<Friendship>> GetUserFriendsAsync(Guid userId, int page, int pageSize);
         Task<int> GetFriendsCountAsync(Guid userId);
         Task<bool> AreFriendsAsync(Guid userA, Guid userB);
@@ -70,7 +71,7 @@ namespace Friend.Domain.Interfaces
         IFollowRepository Follows { get; }
         IBlockRepository Blocks { get; }
 
-        Task<int> SaveChangesAsync();
+        Task SaveChangesAsync();
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();

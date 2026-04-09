@@ -134,19 +134,17 @@ app.MapHealthChecks("/health");
 // Auto-migrate database on startup (for development)
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
+    using var scope = app.Services.CreateScope();
+    try
     {
-        try
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<PostDbContext>();
-            dbContext.Database.Migrate();
-            Console.WriteLine("✅ Database migration completed successfully");
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "❌ An error occurred while migrating the database");
-        }
+        var dbContext = scope.ServiceProvider.GetRequiredService<PostDbContext>();
+        await dbContext.Database.MigrateAsync();
+        Console.WriteLine("✅ Database migration completed successfully");
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "❌ An error occurred while migrating the database");
     }
 }
 

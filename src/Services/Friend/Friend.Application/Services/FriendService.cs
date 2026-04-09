@@ -13,20 +13,15 @@ namespace Friend.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserProfileHttpClient _userClient;
         private readonly IMessagePublisher _publisher;
-        private readonly ICacheService _cache;
-
-        private static readonly TimeSpan FriendsCacheTtl = TimeSpan.FromMinutes(5);
 
         public FriendService(
             IUnitOfWork unitOfWork,
             IUserProfileHttpClient userClient,
-            IMessagePublisher publisher,
-            ICacheService cache)
+            IMessagePublisher publisher)
         {
             _unitOfWork = unitOfWork;
             _userClient = userClient;
             _publisher = publisher;
-            _cache = cache;
         }
 
         public async Task<ApiResponse<PaginatedResponse<FriendshipDto>>> GetFriendsAsync(Guid userId, int page, int pageSize)
@@ -42,8 +37,8 @@ namespace Friend.Application.Services
                 var dtos = friendships.Select(f =>
                 {
                     var friendId = f.GetOtherUserId(userId);
-                    var profile  = profiles.FirstOrDefault(p => p.Id == friendId)
-                                   ?? new UserProfileDto { Id = friendId, Name = "Unknown", UserName = "unknown" };
+                    var profile  = profiles.FirstOrDefault(p => p.UserId == friendId)
+                                   ?? new UserProfileDto { UserId = friendId, Name = "Unknown", UserName = "unknown" };
                     return new FriendshipDto { Id = f.Id, Friend = profile, CreatedAt = f.CreatedAt };
                 }).ToList();
 
@@ -65,14 +60,7 @@ namespace Friend.Application.Services
         {
             try
             {
-                var cacheKey = $"friends:{userId}:ids";
-                var cached   = await _cache.GetAsync<List<Guid>>(cacheKey);
-                if (cached != null)
-                    return ApiResponse<List<Guid>>.SuccessResponse(cached);
-
                 var ids = await _unitOfWork.Friendships.GetFriendIdsAsync(userId);
-                await _cache.SetAsync(cacheKey, ids, FriendsCacheTtl);
-
                 return ApiResponse<List<Guid>>.SuccessResponse(ids);
             }
             catch (Exception ex)
@@ -93,10 +81,7 @@ namespace Friend.Application.Services
                 await _unitOfWork.Friendships.UpdateAsync(friendship);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _cache.RemoveByPrefixAsync($"friends:{userId}");
-                await _cache.RemoveByPrefixAsync($"friends:{targetUserId}");
-
-                await _publisher.PublishFriendRemovedAsync(userId, targetUserId);
+                // await _publisher.PublishFriendRemovedAsync(userId, targetUserId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "Unfriended successfully.");
             }

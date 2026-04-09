@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Friend.Application.DTOs;
-
 namespace Friend.Application.Interfaces
 {
     public interface IFriendService
@@ -59,15 +58,5 @@ namespace Friend.Application.Interfaces
         Task PublishUserFollowedAsync(Guid followerId, Guid followeeId);
         Task PublishUserUnfollowedAsync(Guid followerId, Guid followeeId);
         Task PublishUserBlockedAsync(Guid blockerId, Guid blockedId);
-    }
-
-    // ─── Cache service ─────────────────────────────────────────────────────────
-
-    public interface ICacheService
-    {
-        Task<T?> GetAsync<T>(string key);
-        Task SetAsync<T>(string key, T value, TimeSpan? expiry = null);
-        Task RemoveAsync(string key);
-        Task RemoveByPrefixAsync(string prefix);
     }
 }

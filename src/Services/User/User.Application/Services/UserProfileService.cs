@@ -142,7 +142,7 @@ namespace User.Application.Services
 
         public async Task<ApiResponse<List<UserProfileDto>>> GetProfilesBatchAsync(List<Guid> userIds)
         {
-            if(userIds == null || userIds.Any())
+            if (userIds == null || !userIds.Any())
             {
                 return ApiResponse<List<UserProfileDto>>.SuccessResponse(new List<UserProfileDto>());
             }
