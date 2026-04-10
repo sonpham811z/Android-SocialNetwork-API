@@ -70,6 +70,18 @@ namespace User.Application.Services
             };
         }
 
+        private Task LogSystemActivityAsync(Guid userProfileId, ActivityType type, string description)
+        {
+            return _activityRepository.CreateAsync(new UserActivity
+            {
+                UserProfileId = userProfileId,
+                Type = type,
+                Description = description,
+                IpAddress = "0.0.0.0",
+                UserAgent = "System"
+            });
+        }
+
         public async Task CreateProfileFromIdentityAsync(
             Guid userId, 
             string email, 
@@ -123,14 +135,11 @@ namespace User.Application.Services
                 await _settingsRepository.CreateAsync(settings);
 
                 // Log activity
-                await _activityRepository.CreateAsync(new UserActivity
-                {
-                    UserProfileId = profile.Id,
-                    IpAddress = "0.0.0.0",
-                    Type = ActivityType.ProfileCreated,
-                    Description = "Profile created from Identity service",
-                    UserAgent = "System"
-                });
+                await LogSystemActivityAsync(
+                    profile.Id,
+                    ActivityType.ProfileCreated,
+                    "Profile created from Identity service"
+                );
 
             }
             catch (Exception ex)
@@ -192,12 +201,11 @@ namespace User.Application.Services
                     await _profileRepository.UpdateAsync(profile);
 
                     // Log activity
-                    await _activityRepository.CreateAsync(new UserActivity
-                    {
-                        UserProfileId = profile.Id,
-                        Type = ActivityType.ProfileUpdated,
-                        Description = "Profile updated from Identity service"
-                    });
+                    await LogSystemActivityAsync(
+                        profile.Id,
+                        ActivityType.ProfileUpdated,
+                        "Profile updated from Identity service"
+                    );
                 }
             }
             catch (Exception ex)
@@ -218,12 +226,11 @@ namespace User.Application.Services
                 await _profileRepository.UpdateAsync(profile);
 
                 // Log activity
-                await _activityRepository.CreateAsync(new UserActivity
-                {
-                    UserProfileId = profile.Id,
-                    Type = ActivityType.ProfileUpdated,
-                    Description = $"Profile deleted from Identity service. Reason: {reason}"
-                });
+                await LogSystemActivityAsync(
+                    profile.Id,
+                    ActivityType.ProfileUpdated,
+                    $"Profile deleted from Identity service. Reason: {reason}"
+                );
             }
             catch (Exception ex)
             {
@@ -291,12 +298,11 @@ namespace User.Application.Services
             };
             await _settingsRepository.CreateAsync(settings);
 
-            await _activityRepository.CreateAsync(new UserActivity
-            {
-                UserProfileId = profile.Id,
-                Type = ActivityType.ProfileCreated,
-                Description = "Profile created"
-            });
+            await LogSystemActivityAsync(
+                profile.Id,
+                ActivityType.ProfileCreated,
+                "Profile created"
+            );
 
             return ApiResponse<UserProfileDto>.SuccessResponse(
                 MapToDto(profile),
@@ -314,29 +320,51 @@ namespace User.Application.Services
                 return ApiResponse<UserProfileDto>.ErrorResponse("Profile not found");
             }
 
-            if (!string.IsNullOrEmpty(dto.Bio))
-                profile.Bio = dto.Bio;
+            Console.WriteLine($"Updating profile {profile.Id} with data: {System.Text.Json.JsonSerializer.Serialize(dto)}");
+
+            if (dto.FirstName != null)
+            {
+                if (string.IsNullOrWhiteSpace(dto.FirstName))
+                {
+                    return ApiResponse<UserProfileDto>.ErrorResponse("First name cannot be empty");
+                }
+                profile.FirstName = dto.FirstName.Trim();
+            }
+
+            if (dto.LastName != null)
+            {
+                if (string.IsNullOrWhiteSpace(dto.LastName))
+                {
+                    return ApiResponse<UserProfileDto>.ErrorResponse("Last name cannot be empty");
+                }
+                profile.LastName = dto.LastName.Trim();
+            }
+
+            if (dto.Bio != null)
+                profile.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
             
             if (dto.DateOfBirth.HasValue)
                 profile.DateOfBirth = dto.DateOfBirth;
+            else if (dto.ClearDateOfBirth == true)
+                profile.DateOfBirth = null;
             
-            if (!string.IsNullOrEmpty(dto.Gender))
-                profile.Gender = dto.Gender;
+            if (dto.Gender != null)
+                profile.Gender = string.IsNullOrWhiteSpace(dto.Gender) ? null : dto.Gender.Trim();
             
-            if (!string.IsNullOrEmpty(dto.Location))
-                profile.Location = dto.Location;
+            if (dto.Location != null)
+                profile.Location = string.IsNullOrWhiteSpace(dto.Location) ? null : dto.Location.Trim();
             
-            if (!string.IsNullOrEmpty(dto.City))
-                profile.City = dto.City;
+            if (dto.City != null)
+                profile.City = string.IsNullOrWhiteSpace(dto.City) ? null : dto.City.Trim();
             
-            if (!string.IsNullOrEmpty(dto.Country))
-                profile.Country = dto.Country;
+            if (dto.Country != null)
+                profile.Country = string.IsNullOrWhiteSpace(dto.Country) ? null : dto.Country.Trim();
             
-            if (!string.IsNullOrEmpty(dto.Website))
-                profile.Website = dto.Website;
+            if (dto.Website != null)
+                profile.Website = string.IsNullOrWhiteSpace(dto.Website) ? null : dto.Website.Trim();
             
-            if (!string.IsNullOrEmpty(dto.PhoneNumber))
-                profile.PhoneNumber = dto.PhoneNumber;
+            if (dto.PhoneNumber != null)
+                profile.PhoneNumber = string.IsNullOrWhiteSpace(dto.PhoneNumber) ? null : dto.PhoneNumber.Trim();
             
             if (dto.IsPrivate.HasValue)
                 profile.IsPrivate = dto.IsPrivate.Value;
@@ -346,12 +374,11 @@ namespace User.Application.Services
             profile = await _profileRepository.UpdateAsync(profile);
 
             // Log activity
-            await _activityRepository.CreateAsync(new UserActivity
-            {
-                UserProfileId = profile.Id,
-                Type = ActivityType.ProfileUpdated,
-                Description = "Profile updated"
-            });
+            await LogSystemActivityAsync(
+                profile.Id,
+                ActivityType.ProfileUpdated,
+                "Profile updated"
+            );
 
             return ApiResponse<UserProfileDto>.SuccessResponse(
                 MapToDto(profile), 
@@ -443,12 +470,11 @@ namespace User.Application.Services
             await _profileRepository.UpdateAsync(profile);
 
             // Log activity
-            await _activityRepository.CreateAsync(new UserActivity
-            {
-                UserProfileId = profile.Id,
-                Type = ActivityType.ProfilePictureChanged,
-                Description = "Profile picture updated"
-            });
+            await LogSystemActivityAsync(
+                profile.Id,
+                ActivityType.ProfilePictureChanged,
+                "Profile picture updated"
+            );
 
             return ApiResponse<string>.SuccessResponse(result.Url, "Profile picture uploaded successfully");
         }
@@ -484,12 +510,11 @@ namespace User.Application.Services
             await _profileRepository.UpdateAsync(profile);
 
             // Log activity
-            await _activityRepository.CreateAsync(new UserActivity
-            {
-                UserProfileId = profile.Id,
-                Type = ActivityType.CoverPhotoChanged,
-                Description = "Cover photo updated"
-            });
+            await LogSystemActivityAsync(
+                profile.Id,
+                ActivityType.CoverPhotoChanged,
+                "Cover photo updated"
+            );
 
             return ApiResponse<string>.SuccessResponse(result.Url, "Cover photo uploaded successfully");
         }

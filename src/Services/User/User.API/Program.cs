@@ -19,6 +19,10 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Keep User API on a stable port that matches frontend configuration.
+var serviceUrl = builder.Configuration["ServiceUrl"] ?? "http://0.0.0.0:5210";
+builder.WebHost.UseUrls(serviceUrl);
+
 //Controller + swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -60,8 +64,12 @@ builder.Services.Configure<RabbitMQSettings>(
     builder.Configuration.GetSection("RabbitMQ")
 );
 
-//register background service
-builder.Services.AddHostedService<RabbitMQEventConsumer>();
+// Register RabbitMQ consumer only when explicitly enabled.
+var rabbitMqEnabled = builder.Configuration.GetValue<bool>("RabbitMQ:Enabled");
+if (rabbitMqEnabled)
+{
+    builder.Services.AddHostedService<RabbitMQEventConsumer>();
+}
 
 //Jwt authentication
 var jwtKey = builder.Configuration["Jwt:SecretKey"];

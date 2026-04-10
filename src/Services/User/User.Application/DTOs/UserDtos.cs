@@ -39,32 +39,33 @@ namespace User.Application.DTOs
     {
         [MinLength(2)]
         [MaxLength(50)]
-        public string FirstName { get; set; }
+        public string? FirstName { get; set; }
         
         [MinLength(2)]
         [MaxLength(50)]
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
         
         [MaxLength(500)]
-        public string Bio { get; set; }
+        public string? Bio { get; set; }
         
         public DateTime? DateOfBirth { get; set; }
-        public string Gender { get; set; }
+        public bool? ClearDateOfBirth { get; set; }
+        public string? Gender { get; set; }
         
         [MaxLength(100)]
-        public string Location { get; set; }
+        public string? Location { get; set; }
         
         [MaxLength(100)]
-        public string City { get; set; }
+        public string? City { get; set; }
         
         [MaxLength(100)]
-        public string Country { get; set; }
+        public string? Country { get; set; }
         
         [Url]
-        public string Website { get; set; }
+        public string? Website { get; set; }
         
         [Phone]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
         
         public bool? IsPrivate { get; set; }
     }
