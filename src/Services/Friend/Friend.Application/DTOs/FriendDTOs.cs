@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Friend.Domain.Entities;
 
 namespace Friend.Application.DTOs
@@ -32,9 +33,24 @@ namespace Friend.Application.DTOs
 
     public class UserProfileDto
     {
+        // Profile row PK from User service
+        [JsonPropertyName("id")]
         public Guid Id { get; set; }
+
+        // Auth user ID — used for matching against SenderId / ReceiverId / etc.
+        [JsonPropertyName("userId")]
+        public Guid UserId { get; set; }
+
+        // User service returns "fullName", not "name"
+        [JsonPropertyName("fullName")]
         public string Name { get; set; } = string.Empty;
+
+        // User service returns "username" (lowercase), not "userName"
+        [JsonPropertyName("username")]
         public string UserName { get; set; } = string.Empty;
+
+        // User service returns "profilePictureUrl", not "avatarUrl"
+        [JsonPropertyName("profilePictureUrl")]
         public string? AvatarUrl { get; set; }
     }
 

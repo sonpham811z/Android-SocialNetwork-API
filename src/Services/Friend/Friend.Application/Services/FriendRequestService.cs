@@ -6,6 +6,7 @@ using Friend.Application.DTOs;
 using Friend.Application.Interfaces;
 using Friend.Domain.Entities;
 using Friend.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Friend.Application.Services
 {
@@ -14,18 +15,18 @@ namespace Friend.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserProfileHttpClient _userClient;
         private readonly IMessagePublisher _publisher;
-        private readonly ICacheService _cache;
+        private readonly ILogger<FriendRequestService> _logger;
 
         public FriendRequestService(
             IUnitOfWork unitOfWork,
             IUserProfileHttpClient userClient,
             IMessagePublisher publisher,
-            ICacheService cache)
+            ILogger<FriendRequestService> logger)
         {
             _unitOfWork = unitOfWork;
             _userClient = userClient;
             _publisher = publisher;
-            _cache = cache;
+            _logger = logger;
         }
 
         public async Task<ApiResponse<FriendRequestDto>> SendRequestAsync(Guid senderId, SendFriendRequestDto dto)
@@ -53,14 +54,12 @@ namespace Friend.Application.Services
                     if (existing.SenderId == receiverId)
                     {
                         existing.Accept();
-                        await _unitOfWork.FriendRequests.UpdateAsync(existing);
-
-                        var friendship = Friendship.Create(senderId, receiverId);
-                        await _unitOfWork.Friendships.AddAsync(friendship);
                         await _unitOfWork.SaveChangesAsync();
 
-                        await InvalidateFriendCacheAsync(senderId, receiverId);
-                        await _publisher.PublishFriendRequestAcceptedAsync(existing.Id, existing.SenderId, existing.ReceiverId);
+                        await EnsureFriendshipAsync(senderId, receiverId);
+                        await _unitOfWork.SaveChangesAsync();
+
+                        // await _publisher.PublishFriendRequestAcceptedAsync(existing.Id, existing.SenderId, existing.ReceiverId);
 
                         var autoDto = await MapRequestDtoAsync(existing);
                         return ApiResponse<FriendRequestDto>.SuccessResponse(autoDto, "Friend request automatically accepted.");
@@ -73,7 +72,7 @@ namespace Friend.Application.Services
                 await _unitOfWork.FriendRequests.AddAsync(request);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _publisher.PublishFriendRequestSentAsync(request.Id, senderId, receiverId);
+                // await _publisher.PublishFriendRequestSentAsync(request.Id, senderId, receiverId);
 
                 var requestDto = await MapRequestDtoAsync(request);
                 return ApiResponse<FriendRequestDto>.SuccessResponse(requestDto, "Friend request sent.");
@@ -96,14 +95,13 @@ namespace Friend.Application.Services
                     return ApiResponse<FriendRequestDto>.ErrorResponse("You are not authorised to accept this request.");
 
                 request.Accept();
-                await _unitOfWork.FriendRequests.UpdateAsync(request);
-
-                var friendship = Friendship.Create(request.SenderId, request.ReceiverId);
-                await _unitOfWork.Friendships.AddAsync(friendship);
                 await _unitOfWork.SaveChangesAsync();
 
-                await InvalidateFriendCacheAsync(request.SenderId, request.ReceiverId);
-                await _publisher.PublishFriendRequestAcceptedAsync(request.Id, request.SenderId, request.ReceiverId);
+                await EnsureFriendshipAsync(request.SenderId, request.ReceiverId);
+                await _unitOfWork.SaveChangesAsync();
+
+
+                // await _publisher.PublishFriendRequestAcceptedAsync(request.Id, request.SenderId, request.ReceiverId);
 
                 var dto = await MapRequestDtoAsync(request);
                 return ApiResponse<FriendRequestDto>.SuccessResponse(dto, "Friend request accepted.");
@@ -126,10 +124,9 @@ namespace Friend.Application.Services
                     return ApiResponse<FriendRequestDto>.ErrorResponse("You are not authorised to decline this request.");
 
                 request.Decline();
-                await _unitOfWork.FriendRequests.UpdateAsync(request);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _publisher.PublishFriendRequestDeclinedAsync(request.Id, request.SenderId, request.ReceiverId);
+                // await _publisher.PublishFriendRequestDeclinedAsync(request.Id, request.SenderId, request.ReceiverId);
 
                 var dto = await MapRequestDtoAsync(request);
                 return ApiResponse<FriendRequestDto>.SuccessResponse(dto, "Friend request declined.");
@@ -152,7 +149,6 @@ namespace Friend.Application.Services
                     return ApiResponse<bool>.ErrorResponse("You are not authorised to cancel this request.");
 
                 request.Cancel();
-                await _unitOfWork.FriendRequests.UpdateAsync(request);
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse<bool>.SuccessResponse(true, "Friend request cancelled.");
@@ -191,6 +187,8 @@ namespace Friend.Application.Services
             try
             {
                 var requests = await _unitOfWork.FriendRequests.GetReceivedRequestsAsync(userId, page, pageSize);
+                _logger.LogDebug("Received friend requests: {@Requests}", requests);
+                
                 var dtos = new List<FriendRequestDto>();
                 foreach (var r in requests)
                     dtos.Add(await MapRequestDtoAsync(r));
@@ -211,15 +209,33 @@ namespace Friend.Application.Services
 
         // ─── Helpers ──────────────────────────────────────────────────────────────
 
+        private async Task EnsureFriendshipAsync(Guid userA, Guid userB)
+        {
+            var existingFriendship = await _unitOfWork.Friendships.GetByUsersIncludingDeletedAsync(userA, userB);
+
+            if (existingFriendship == null)
+            {
+                var friendship = Friendship.Create(userA, userB);
+                await _unitOfWork.Friendships.AddAsync(friendship);
+                return;
+            }
+
+            if (existingFriendship.IsDeleted)
+            {
+                existingFriendship.Restore();
+                await _unitOfWork.Friendships.UpdateAsync(existingFriendship);
+            }
+        }
+
         private async Task<FriendRequestDto> MapRequestDtoAsync(FriendRequest request)
         {
             var userIds = new List<Guid> { request.SenderId, request.ReceiverId };
             var users = await _userClient.GetUserProfilesAsync(userIds);
 
-            var sender   = users.FirstOrDefault(u => u.Id == request.SenderId)
-                           ?? new UserProfileDto { Id = request.SenderId, Name = "Unknown", UserName = "unknown" };
-            var receiver = users.FirstOrDefault(u => u.Id == request.ReceiverId)
-                           ?? new UserProfileDto { Id = request.ReceiverId, Name = "Unknown", UserName = "unknown" };
+            var sender   = users.FirstOrDefault(u => u.UserId == request.SenderId)
+                           ?? new UserProfileDto { UserId = request.SenderId, Name = "Unknown", UserName = "unknown" };
+            var receiver = users.FirstOrDefault(u => u.UserId == request.ReceiverId)
+                           ?? new UserProfileDto { UserId = request.ReceiverId, Name = "Unknown", UserName = "unknown" };
 
             return new FriendRequestDto
             {
@@ -232,10 +248,5 @@ namespace Friend.Application.Services
             };
         }
 
-        private async Task InvalidateFriendCacheAsync(Guid userA, Guid userB)
-        {
-            await _cache.RemoveByPrefixAsync($"friends:{userA}");
-            await _cache.RemoveByPrefixAsync($"friends:{userB}");
-        }
     }
 }

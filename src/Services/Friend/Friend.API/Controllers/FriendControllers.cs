@@ -1,10 +1,13 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Friend.Application.DTOs;
 using Friend.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Friend.API.Controllers
 {
@@ -15,15 +18,27 @@ namespace Friend.API.Controllers
     {
         private readonly IFriendService _friendService;
         private readonly IFriendRequestService _requestService;
+        private readonly ILogger<FriendController> _logger;
 
-        public FriendController(IFriendService friendService, IFriendRequestService requestService)
+        public FriendController(IFriendService friendService, IFriendRequestService requestService, ILogger<FriendController> logger)
         {
             _friendService  = friendService;
             _requestService = requestService;
+            _logger = logger;
         }
 
-        private Guid CurrentUserId =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        private Guid CurrentUserId
+        {
+            get
+            {
+                var userIdClaim =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                    User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                    User.FindFirstValue("sub");
+
+                return Guid.Parse(userIdClaim!);
+            }
+        }
 
         // GET api/friends?page=1&pageSize=20
         [HttpGet]
@@ -112,6 +127,13 @@ namespace Friend.API.Controllers
         public async Task<IActionResult> GetReceivedRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var result = await _requestService.GetReceivedRequestsAsync(CurrentUserId, page, pageSize);
+    
+            // Convert object thành chuỗi JSON, bật WriteIndented = true để nó format thụt lề cho dễ đọc
+            var jsonString = JsonSerializer.Serialize(result.Data, new JsonSerializerOptions { WriteIndented = true });
+            
+            // Dùng _logger in ra thay vì Console để log sạch đẹp
+            _logger.LogInformation("Data bên trong Result:\n{Data}", jsonString);
+
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }
@@ -124,8 +146,18 @@ namespace Friend.API.Controllers
     public class FollowController : ControllerBase
     {
         private readonly IFollowService _followService;
-        private Guid CurrentUserId =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        private Guid CurrentUserId
+        {
+            get
+            {
+                var userIdClaim =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                    User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                    User.FindFirstValue("sub");
+
+                return Guid.Parse(userIdClaim!);
+            }
+        }
 
         public FollowController(IFollowService followService) => _followService = followService;
 
@@ -170,8 +202,18 @@ namespace Friend.API.Controllers
     public class BlockController : ControllerBase
     {
         private readonly IBlockService _blockService;
-        private Guid CurrentUserId =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        private Guid CurrentUserId
+        {
+            get
+            {
+                var userIdClaim =
+                    User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                    User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                    User.FindFirstValue("sub");
+
+                return Guid.Parse(userIdClaim!);
+            }
+        }
 
         public BlockController(IBlockService blockService) => _blockService = blockService;
 

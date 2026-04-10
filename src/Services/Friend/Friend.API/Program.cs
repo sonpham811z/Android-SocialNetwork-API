@@ -8,76 +8,125 @@ using Friend.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using StackExchange.Redis;
+using Serilog;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
-var config  = builder.Configuration;
+// ── 1. Setup Serilog Bootstrap (Tạm thời để bắt lỗi lúc app chưa build xong) ──
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// ── Database ───────────────────────────────────────────────────────────────────
-builder.Services.AddDbContext<FriendDbContext>(options =>
-    options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+try
+{
+    Log.Information("Friend.API starting up...");
+    
+    var builder = WebApplication.CreateBuilder(args);
+    var config = builder.Configuration;
 
-// ── Redis ──────────────────────────────────────────────────────────────────────
-builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-    ConnectionMultiplexer.Connect(config["Redis:ConnectionString"] ?? "localhost:6379"));
-builder.Services.AddScoped<ICacheService, RedisCacheService>();
+    // ── 2. Cấu hình Serilog chính thức (Đọc từ appsettings.json) ──
+    builder.Host.UseSerilog((context, loggerConfiguration) => loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration) // <--- DÒNG NÀY ĂN TIỀN NHẤT: Bắt buộc đọc file config để "bịt miệng" Microsoft
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Service", "Friend.API")
+        .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+        .WriteTo.File(
+            path: "logs/friend-service-.txt",
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+            retainedFileCountLimit: 7)
+    );
 
-// ── RabbitMQ ───────────────────────────────────────────────────────────────────
-builder.Services.Configure<RabbitMQSettings>(config.GetSection("RabbitMQ"));
-builder.Services.AddSingleton<IMessagePublisher, RabbitMqPublisher>();
+    Log.Information("Configuration loaded");
 
-// ── HTTP clients ───────────────────────────────────────────────────────────────
-builder.Services.AddHttpClient<IUserProfileHttpClient, UserProfileHttpClient>();
+    // ── Database ───────────────────────────────────────────────────────────────────
+    builder.Services.AddDbContext<FriendDbContext>(options =>
+        options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+    
+    Log.Debug("Database context configured");
 
-// ── Repositories & UoW ────────────────────────────────────────────────────────
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+    // ── RabbitMQ ───────────────────────────────────────────────────────────────
+    builder.Services.Configure<RabbitMQSettings>(config.GetSection("RabbitMQ"));
+    builder.Services.AddSingleton<IMessagePublisher, RabbitMqPublisher>();
+    Log.Debug("RabbitMQ message publisher configured");
 
-// ── Application services ───────────────────────────────────────────────────────
-builder.Services.AddScoped<IFriendService, FriendService>();
-builder.Services.AddScoped<IFriendRequestService, FriendRequestService>();
-builder.Services.AddScoped<IFollowService, FollowService>();
-builder.Services.AddScoped<IBlockService, BlockService>();
+    // ── HTTP clients ───────────────────────────────────────────────────────────
+    builder.Services.AddHttpClient<IUserProfileHttpClient, UserProfileHttpClient>();
+    Log.Debug("HTTP clients configured");
 
-// ── Auth ───────────────────────────────────────────────────────────────────────
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    // ── Repositories & UoW ────────────────────────────────────────────────────
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+    Log.Debug("Repository pattern and UnitOfWork configured");
+
+    // ── Application services ───────────────────────────────────────────────────
+    builder.Services.AddScoped<IFriendService, FriendService>();
+    builder.Services.AddScoped<IFriendRequestService, FriendRequestService>();
+    builder.Services.AddScoped<IFollowService, FollowService>();
+    builder.Services.AddScoped<IBlockService, BlockService>();
+    Log.Debug("Application services registered");
+
+    // ── Auth ───────────────────────────────────────────────────────────────
+    var jwtSecret = config["Jwt:Key"] ?? config["Jwt:SecretKey"];
+    if (string.IsNullOrWhiteSpace(jwtSecret))
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        Log.Fatal("JWT signing key is missing. Configure Jwt:Key or Jwt:SecretKey");
+        throw new InvalidOperationException("JWT signing key is missing. Configure Jwt:Key or Jwt:SecretKey.");
+    }
+
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            ValidateIssuer           = true,
-            ValidateAudience         = true,
-            ValidateLifetime         = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer              = config["Jwt:Issuer"],
-            ValidAudience            = config["Jwt:Audience"],
-            IssuerSigningKey         = new SymmetricSecurityKey(
-                                           Encoding.UTF8.GetBytes(config["Jwt:Key"]!))
-        };
-    });
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer           = true,
+                ValidateAudience         = true,
+                ValidateLifetime         = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer              = config["Jwt:Issuer"],
+                ValidAudience            = config["Jwt:Audience"],
+                IssuerSigningKey         = new SymmetricSecurityKey(
+                                               Encoding.UTF8.GetBytes(jwtSecret))
+            };
+        });
 
-builder.Services.AddAuthorization();
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+    Log.Debug("JWT Bearer authentication configured");
 
-var app = builder.Build();
+    builder.Services.AddAuthorization();
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var app = builder.Build();
+
+    Log.Information("Application pipeline configured");
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        Log.Debug("Swagger UI enabled for Development environment");
+    }
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.MapControllers();
+
+    // Auto-migrate on startup (remove in production; use proper migration pipeline)
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<FriendDbContext>();
+        Log.Information("Database context retrieved for migration check");
+        // await db.Database.MigrateAsync();
+    }
+
+    Log.Information("Friend.API started successfully. Listening on specified port");
+    app.Run();
 }
-
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
-// Auto-migrate on startup (remove in production; use proper migration pipeline)
-using (var scope = app.Services.CreateScope())
+catch (Exception ex)
 {
-    var db = scope.ServiceProvider.GetRequiredService<FriendDbContext>();
-    await db.Database.MigrateAsync();
+    Log.Fatal(ex, "Friend.API terminated unexpectedly");
 }
-
-app.Run();
+finally
+{
+    Log.Information("Friend.API shutting down");
+    Log.CloseAndFlush(); // Ở phiên bản Serilog hiện tại, hàm này thường là đồng bộ (không có await)
+}

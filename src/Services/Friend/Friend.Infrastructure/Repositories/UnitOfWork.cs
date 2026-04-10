@@ -26,7 +26,7 @@ namespace Friend.Infrastructure.Repositories
             Blocks       = new BlockRepository(ctx);
         }
 
-        public Task<int> SaveChangesAsync() => _ctx.SaveChangesAsync();
+        public async Task SaveChangesAsync() => await _ctx.SaveChangesAsync();
 
         public async Task BeginTransactionAsync() =>
             _transaction = await _ctx.Database.BeginTransactionAsync();

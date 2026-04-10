@@ -3,68 +3,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Friend.Application.DTOs;
 using Friend.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
-using StackExchange.Redis;
+using Microsoft.Extensions.Logging;
+
 
 namespace Friend.Infrastructure.Services
 {
-    // ─── Redis cache ───────────────────────────────────────────────────────────
-
-    public class RedisCacheService : ICacheService
-    {
-        private readonly IDatabase _db;
-        private readonly IServer _server;
-        private readonly string _instanceName;
-
-        public RedisCacheService(IConnectionMultiplexer redis, IConfiguration config)
-        {
-            _db = redis.GetDatabase();
-            _server = redis.GetServer(redis.GetEndPoints().First());
-            _instanceName = config["Redis:InstanceName"] ?? "friend:";
-        }
-
-        private string Key(string key) => $"{_instanceName}{key}";
-
-        public async Task<T?> GetAsync<T>(string key)
-        {
-            var value = await _db.StringGetAsync(Key(key));
-            if (value.IsNullOrEmpty) return default;
-            return JsonSerializer.Deserialize<T>(value.ToString());
-        }
-
-        public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
-        {
-            var json = JsonSerializer.Serialize(value);
-            await _db.StringSetAsync(Key(key), json, expiry ?? TimeSpan.FromMinutes(10));
-        }
-
-        public async Task RemoveAsync(string key) =>
-            await _db.KeyDeleteAsync(Key(key));
-
-        public async Task RemoveByPrefixAsync(string prefix)
-        {
-            var pattern = $"{_instanceName}{prefix}*";
-            var keys = _server.Keys(pattern: pattern).ToArray();
-            if (keys.Length > 0)
-                await _db.KeyDeleteAsync(keys);
-        }
-    }
-
-    // ─── UserProfile HTTP client ───────────────────────────────────────────────
+    // ─── UserProfile HTTP client (Đã refactor gọn gàng) ───────────────────────
 
     public class UserProfileHttpClient : IUserProfileHttpClient
     {
         private readonly HttpClient _http;
         private readonly string _baseUrl;
+        private readonly ILogger<UserProfileHttpClient> _logger;
 
-        public UserProfileHttpClient(HttpClient http, IConfiguration config)
+        // Inject thêm ILogger vào đây
+        public UserProfileHttpClient(HttpClient http, IConfiguration config, ILogger<UserProfileHttpClient> logger)
         {
             _http = http;
-            _baseUrl = config["Services:UserService:BaseUrl"] ?? "http://localhost:5002";
+            _logger = logger;
+            
+            // Ưu tiên lấy từ config, không có thì fallback về port 5000 của bro
+            _baseUrl = config["Services:UserService:BaseUrl"] ?? "http://localhost:5000";
+            _baseUrl = _baseUrl.TrimEnd('/');
         }
 
         public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId)
@@ -72,16 +36,28 @@ namespace Friend.Infrastructure.Services
             try
             {
                 var response = await _http.GetAsync($"{_baseUrl}/api/userprofile/{userId}");
-                if (!response.IsSuccessStatusCode) return null;
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Profile endpoint returned status {StatusCode} for userId {UserId}", response.StatusCode, userId);
+                    return null;
+                }
 
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<UserProfileDto>>();
-                return apiResponse?.Data;
+                
+                if (apiResponse?.Success == true && apiResponse.Data != null)
+                {
+                    return apiResponse.Data;
+                }
+                
+                _logger.LogWarning("API returned error for userId {UserId}: {Message}", userId, apiResponse?.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UserProfileHttpClient] Error fetching profile {userId}: {ex.Message}");
-                return null;
+                _logger.LogError(ex, "Error fetching profile {UserId} from {_baseUrl}", userId, _baseUrl);
             }
+
+            return null;
         }
 
         public async Task<List<UserProfileDto>> GetUserProfilesAsync(List<Guid> userIds)
@@ -92,16 +68,29 @@ namespace Friend.Infrastructure.Services
             try
             {
                 var response = await _http.PostAsJsonAsync($"{_baseUrl}/api/userprofile/batch", userIds);
-                if (!response.IsSuccessStatusCode) return new List<UserProfileDto>();
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Batch endpoint returned status {StatusCode}", response.StatusCode);
+                    return new List<UserProfileDto>();
+                }
 
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileDto>>>();
-                return apiResponse?.Data ?? new List<UserProfileDto>();
+                
+                if (apiResponse?.Success == true && apiResponse.Data != null)
+                {
+                    _logger.LogInformation("Successfully fetched {Count} profiles from User Service", apiResponse.Data.Count);
+                    return apiResponse.Data;
+                }
+                
+                _logger.LogWarning("API returned error: {Message}", apiResponse?.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UserProfileHttpClient] Error batch fetching profiles: {ex.Message}");
-                return new List<UserProfileDto>();
+                _logger.LogError(ex, "Error batch fetching profiles from {_baseUrl}", _baseUrl);
             }
+
+            return new List<UserProfileDto>();
         }
     }
 }
