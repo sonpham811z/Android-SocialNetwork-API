@@ -101,14 +101,24 @@ namespace Identity.API.Controllers
         [HttpPost("refresh-token")]
         [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RefreshToken()
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto? dto)
         {
             var refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                refreshToken = dto?.RefreshToken;
+            }
 
             if(string.IsNullOrEmpty(refreshToken))
                 return BadRequest(ApiResponse<AuthResponseDto>.ErrorResponse("Refresh token is required"));
             
             var result = await _authService.RefreshTokenAsync(refreshToken, GetIpAddress());
+
+            if (!result.Success || result.Data == null)
+            {
+                return BadRequest(result);
+            }
 
             SetRefreshTokenCookie(result.Data.RefreshToken);
             return Ok(result);
