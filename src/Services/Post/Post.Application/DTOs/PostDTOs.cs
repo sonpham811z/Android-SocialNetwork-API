@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Post.Application.DTOs
 {
@@ -121,10 +122,48 @@ namespace Post.Application.DTOs
     public class UserProfileDto
     {
         public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string UserName { get; set; }
+        public string? Name { get; set; }
+        
+        [JsonPropertyName("username")]
+        public string? UserName { get; set; }
+        
         public string? ProfilePictureUrl { get; set; }
         public bool IsVerified { get; set; }
+        
+        // Fields from User Service API response - these will be used if Name/UserName are null
+        [JsonPropertyName("firstName")]
+        public string? FirstName { get; set; }
+        
+        [JsonPropertyName("lastName")]
+        public string? LastName { get; set; }
+        
+        [JsonPropertyName("fullName")]
+        public string? FullName { get; set; }
+        
+        // Helper method to get display name
+        public string GetDisplayName()
+        {
+            if (!string.IsNullOrWhiteSpace(Name))
+                return Name;
+            
+            if (!string.IsNullOrWhiteSpace(FullName))
+                return FullName;
+            
+            if (!string.IsNullOrWhiteSpace(FirstName) || !string.IsNullOrWhiteSpace(LastName))
+            {
+                var parts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(FirstName)) parts.Add(FirstName);
+                if (!string.IsNullOrWhiteSpace(LastName)) parts.Add(LastName);
+                return string.Join(" ", parts);
+            }
+            
+            return "Unknown User";
+        }
+        
+        public string GetUsername()
+        {
+            return !string.IsNullOrWhiteSpace(UserName) ? UserName : "unknown";
+        }
     }
 
     // Feed DTOs

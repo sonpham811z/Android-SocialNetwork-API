@@ -28,6 +28,7 @@ namespace Identity.Infrastructure.Services
         
             var claims = new [] // những thông tin sẽ được lưu trong token
             {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),

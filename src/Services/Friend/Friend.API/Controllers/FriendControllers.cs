@@ -128,7 +128,6 @@ namespace Friend.API.Controllers
         {
             var result = await _requestService.GetReceivedRequestsAsync(CurrentUserId, page, pageSize);
     
-            // Convert object thành chuỗi JSON, bật WriteIndented = true để nó format thụt lề cho dễ đọc
             var jsonString = JsonSerializer.Serialize(result.Data, new JsonSerializerOptions { WriteIndented = true });
             
             // Dùng _logger in ra thay vì Console để log sạch đẹp

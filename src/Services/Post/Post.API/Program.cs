@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Logging; // 1. THÊM DÒNG NÀY ĐỂ BẬT LOG
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Post.Application.Interfaces;
@@ -11,6 +12,9 @@ using Post.Infrastructure.Repositories;
 using Post.Infrastructure.Services;
 using System.Text;
 
+// 2. BẬT HIỂN THỊ TOKEN LỖI (ShowPII) - XÓA HOẶC COMMENT LẠI KHI LÊN PRODUCTION NHÉ BRO!
+IdentityModelEventSource.ShowPII = true;
+IdentityModelEventSource.LogCompleteSecurityArtifact = true;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
@@ -50,8 +54,15 @@ builder.Services.Configure<RabbitMQSettings>(
 // Database configuration - Support both SQL Server and PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<PostDbContext>(options => 
-    options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<PostDbContext>(options =>
+    options.UseNpgsql(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+    }));
+
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -64,6 +75,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    options.UseSecurityTokenValidators = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -74,6 +86,23 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"[JWT] Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            if (!string.IsNullOrWhiteSpace(context.ErrorDescription))
+            {
+                Console.WriteLine($"[JWT] Challenge: {context.ErrorDescription}");
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -119,7 +148,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Tắt để tránh lỗi SSL khi chạy local (giống Identity service)
 
 app.UseCors("AllowAll");
 
@@ -130,23 +159,6 @@ app.MapControllers();
 
 // Health check endpoint
 app.MapHealthChecks("/health");
-
-// Auto-migrate database on startup (for development)
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    try
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<PostDbContext>();
-        await dbContext.Database.MigrateAsync();
-        Console.WriteLine("✅ Database migration completed successfully");
-    }
-    catch (Exception ex)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "❌ An error occurred while migrating the database");
-    }
-}
 
 Console.WriteLine("🚀 Post Service is running...");
 Console.WriteLine($"📍 Environment: {app.Environment.EnvironmentName}");

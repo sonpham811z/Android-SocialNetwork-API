@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using Message.Application.DTOs;
 using Message.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +24,10 @@ public class ConversationController : ControllerBase
     }
 
     private Guid CurrentUserId =>
-        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        Guid.Parse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue("sub")!);
 
     /// <summary>Get all conversations for the current user, sorted by most recently updated.</summary>
     [HttpGet]

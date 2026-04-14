@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Post.Domain.Interfaces;
 using Post.Infrastructure.Data;
@@ -27,6 +28,16 @@ namespace Post.Infrastructure.Repositories
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task OpenConnectionAsync()
+        {
+            await _context.Database.OpenConnectionAsync();
+        }
+
+        public async Task CloseConnectionAsync()
+        {
+            await _context.Database.GetDbConnection().CloseAsync();
         }
 
         public async Task BeginTransactionAsync()

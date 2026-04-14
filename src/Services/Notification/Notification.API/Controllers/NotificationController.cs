@@ -4,6 +4,7 @@ using Notification.Application.DTOs;
 using Notification.Application.Interfaces;
 using Notification.Domain.Entities;
 using Notification.Domain.Interfaces;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Notification.API.Controllers
@@ -95,7 +96,9 @@ namespace Notification.API.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue("sub");
             return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
         }
     }

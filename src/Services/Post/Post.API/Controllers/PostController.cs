@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Post.Application.DTOs;
 using Post.Application.Interfaces;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -61,6 +62,7 @@ namespace Post.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
+            Console.WriteLine("Getting feed for user.............................................");
             var userId = GetCurrentUserId();
             
 
@@ -277,7 +279,10 @@ namespace Post.API.Controllers
                 throw new UnauthorizedAccessException("User is not logged in."); 
             }
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim =
+                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                User.FindFirstValue("sub");
 
             if (Guid.TryParse(userIdClaim, out var userId))
             {

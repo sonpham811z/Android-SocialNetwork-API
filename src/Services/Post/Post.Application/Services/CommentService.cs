@@ -166,13 +166,25 @@ namespace Post.Application.Services
         private async Task<CommentDto> MapToCommentDtoAsync(Comment comment)
         {
             var userProfile = await _userProfileClient.GetUserProfileAsync(comment.UserId);
+            
+            // Fallback to default UserProfileDto if not found
+            if (userProfile == null)
+            {
+                userProfile = new UserProfileDto 
+                { 
+                    Id = comment.UserId, 
+                    Name = "Unknown User", 
+                    UserName = "unknown",
+                    FullName = "Unknown User"
+                };
+            }
 
             return new CommentDto
             {
                 Id = comment.Id,
                 PostId = comment.PostId,
                 UserId = comment.UserId,
-                User = userProfile ?? new UserProfileDto { Id = comment.UserId, Name = "Unknown User", UserName = "unknown" },
+                User = userProfile,
                 Content = comment.Content,
                 ParentCommentId = comment.ParentCommentId,
                 CreatedAt = comment.CreatedAt,

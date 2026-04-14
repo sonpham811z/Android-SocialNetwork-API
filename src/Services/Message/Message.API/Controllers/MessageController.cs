@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using Message.Application.DTOs;
 using Message.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -16,7 +17,10 @@ public class MessageController : ControllerBase
     public MessageController(IMessageService service) => _service = service;
 
     private Guid CurrentUserId =>
-        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        Guid.Parse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue("sub")!);
 
     /// <summary>
     /// Send a message via REST API.

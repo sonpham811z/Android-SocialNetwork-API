@@ -32,6 +32,15 @@ namespace Post.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
+        public async Task<Domain.Entities.Post?> GetByIdForLikeAsync(Guid id)
+        {
+            // Load Post với ALL Likes (kể cả soft-deleted) để có thể restore
+            return await _context.Posts
+                .Include(p => p.Likes.Where(l => true)) // Force load all
+                .IgnoreQueryFilters() // Skip soft-delete filter để lấy deleted likes
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
         public async Task<IEnumerable<Domain.Entities.Post>> GetUserPostsAsync(Guid userId, int page, int pageSize)
         {
             return await _context.Posts
@@ -182,6 +191,13 @@ namespace Post.Infrastructure.Repositories
         public async Task<PostLike?> GetByPostAndUserAsync(Guid postId, Guid userId)
         {
             return await _context.PostLikes
+                .FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId);
+        }
+
+        public async Task<PostLike?> GetByPostAndUserIncludingDeletedAsync(Guid postId, Guid userId)
+        {
+            return await _context.PostLikes
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId);
         }
 
