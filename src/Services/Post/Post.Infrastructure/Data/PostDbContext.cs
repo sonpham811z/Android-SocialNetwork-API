@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Post.Domain.Entities;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Post.Infrastructure.Data
 {
@@ -40,7 +41,12 @@ namespace Post.Infrastructure.Data
                         v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
                         v => JsonSerializer.Deserialize<List<double>>(v, (JsonSerializerOptions)null)
                     )
-                    .HasColumnType("TEXT");
+                    .HasColumnType("TEXT")
+                    .Metadata.SetValueComparer(new ValueComparer<List<double>>(
+                        (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                        c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())) : 0,
+                        c => c != null ? c.ToList() : null
+                    ));
 
                 entity.Property(p => p.Visibility).IsRequired();
                 entity.Property(p => p.CreatedAt).IsRequired();
@@ -99,7 +105,10 @@ namespace Post.Infrastructure.Data
                 entity.Property(l => l.UserId).IsRequired();
                 entity.Property(l => l.CreatedAt).IsRequired();
 
-                entity.HasIndex(l => new { l.PostId, l.UserId }).IsUnique();
+                // Partial unique index: cho phép re-like sau khi unlike (soft delete)
+                entity.HasIndex(l => new { l.PostId, l.UserId })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false");
                 entity.HasIndex(l => l.UserId);
 
                 // Query filters for soft delete

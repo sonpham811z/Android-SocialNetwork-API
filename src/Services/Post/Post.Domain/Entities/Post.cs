@@ -41,7 +41,10 @@ namespace Post.Domain.Entities
         public IReadOnlyCollection<PostLike> Likes => _likes.AsReadOnly();
         
         // Constructor for EF Core
-        private Post() { }
+        private Post() 
+        { 
+            Content = null!; 
+        }
         
         // Factory methods
         public static Post CreateTextPost(Guid userId, string content, PostVisibility visibility = PostVisibility.Public)
@@ -147,29 +150,16 @@ namespace Post.Domain.Entities
             }
         }
         
-        public void AddLike(Guid userId)
+        public void IncrementLikesCount()
         {
-            if (IsDeleted)
-                throw new InvalidOperationException("Cannot like deleted post");
-                
-            if (_likes.Any(l => l.UserId == userId && !l.IsDeleted))
-                throw new InvalidOperationException("User already liked this post");
-            
-            var like = PostLike.Create(Id, userId);
-            _likes.Add(like);
             LikesCount++;
             UpdatedAt = DateTime.UtcNow;
         }
-        
-        public void RemoveLike(Guid userId)
+
+        public void DecrementLikesCount()
         {
-            var like = _likes.FirstOrDefault(l => l.UserId == userId && !l.IsDeleted);
-            if (like != null)
-            {
-                like.SoftDelete();
-                LikesCount--;
-                UpdatedAt = DateTime.UtcNow;
-            }
+            if (LikesCount > 0) LikesCount--;
+            UpdatedAt = DateTime.UtcNow;
         }
         
         public void IncrementShareCount()

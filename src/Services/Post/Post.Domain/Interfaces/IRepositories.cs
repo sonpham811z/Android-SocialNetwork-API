@@ -9,6 +9,7 @@ namespace Post.Domain.Interfaces
     {
         Task<Entities.Post?> GetByIdAsync(Guid id);
         Task<Entities.Post?> GetByIdWithCommentsAsync(Guid id);
+        Task<Entities.Post?> GetByIdForLikeAsync(Guid id);
         Task<IEnumerable<Entities.Post>> GetUserPostsAsync(Guid userId, int page, int pageSize);
         Task<IEnumerable<Entities.Post>> GetFeedPostsAsync(List<Guid> userIds, int page, int pageSize);
 
@@ -34,6 +35,7 @@ namespace Post.Domain.Interfaces
     {
         Task<PostLike?> GetByIdAsync(Guid id);
         Task<PostLike?> GetByPostAndUserAsync(Guid postId, Guid userId);
+        Task<PostLike?> GetByPostAndUserIncludingDeletedAsync(Guid postId, Guid userId);
         Task<IEnumerable<PostLike>> GetPostLikesAsync(Guid postId);
         Task<bool> HasUserLikedPostAsync(Guid postId, Guid userId);
         Task<PostLike> AddAsync(PostLike like);
@@ -47,6 +49,8 @@ namespace Post.Domain.Interfaces
         ICommentRepository Comments { get; }
         IPostLikeRepository PostLikes { get; }
         Task<int> SaveChangesAsync();
+        Task OpenConnectionAsync();
+        Task CloseConnectionAsync();
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();

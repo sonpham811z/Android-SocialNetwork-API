@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using Message.Application.DTOs;
 using Message.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -141,6 +142,8 @@ public class MessageHub : Hub
     private Guid GetUserId()
     {
         var claim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? Context.User?.FindFirst("sub")?.Value
             ?? throw new HubException("Unauthorized: user identity claim is missing.");
 
         return Guid.TryParse(claim, out var id)

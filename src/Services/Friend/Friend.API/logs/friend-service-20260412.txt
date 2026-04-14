@@ -1,0 +1,124 @@
+[2026-04-12 15:23:29.463 +07:00] [INF] Application pipeline configured
+[2026-04-12 15:23:29.932 +07:00] [INF] Database context retrieved for migration check
+[2026-04-12 15:23:29.934 +07:00] [INF] Friend.API started successfully. Listening on specified port
+[2026-04-12 15:23:29.995 +07:00] [INF] Now listening on: http://localhost:5176
+[2026-04-12 15:23:29.998 +07:00] [INF] Application started. Press Ctrl+C to shut down.
+[2026-04-12 15:23:29.999 +07:00] [INF] Hosting environment: Development
+[2026-04-12 15:23:30.000 +07:00] [INF] Content root path: D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.API
+[2026-04-12 15:24:19.392 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 15:24:21.743 +07:00] [ERR] Failed to initialize RabbitMQ connection for Friend service
+RabbitMQ.Client.Exceptions.BrokerUnreachableException: None of the specified endpoints were reachable
+ ---> System.AggregateException: One or more errors occurred. (Connection failed, host 127.0.0.1:5672)
+ ---> RabbitMQ.Client.Exceptions.ConnectFailureException: Connection failed, host 127.0.0.1:5672
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at RabbitMQ.Client.Impl.SocketFactory.ConnectUsingAddressFamilyAsync(IPEndPoint endpoint, Func`2 socketFactory, AddressFamily family, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at RabbitMQ.Client.Impl.SocketFactory.ConnectUsingAddressFamilyAsync(IPEndPoint endpoint, Func`2 socketFactory, AddressFamily family, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+   at RabbitMQ.Client.Impl.SocketFactory.OpenAsync(AmqpTcpEndpoint amqpTcpEndpoint, Func`2 socketFactory, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+   at RabbitMQ.Client.Impl.SocketFrameHandler.CreateAsync(AmqpTcpEndpoint amqpTcpEndpoint, Func`2 socketFactory, TimeSpan connectionTimeout, CancellationToken cancellationToken)
+   at RabbitMQ.Client.ConnectionFactory.CreateFrameHandlerAsync(AmqpTcpEndpoint endpoint, CancellationToken cancellationToken)
+   at RabbitMQ.Client.EndpointResolverExtensions.SelectOneAsync[T](IEndpointResolver resolver, Func`3 selector, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at RabbitMQ.Client.EndpointResolverExtensions.SelectOneAsync[T](IEndpointResolver resolver, Func`3 selector, CancellationToken cancellationToken)
+   at RabbitMQ.Client.Framing.AutorecoveringConnection.CreateAsync(ConnectionConfig config, IEndpointResolver endpoints, CancellationToken cancellationToken)
+   at RabbitMQ.Client.ConnectionFactory.CreateConnectionAsync(IEndpointResolver endpointResolver, String clientProvidedName, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at RabbitMQ.Client.ConnectionFactory.CreateConnectionAsync(IEndpointResolver endpointResolver, String clientProvidedName, CancellationToken cancellationToken)
+   at Friend.Infrastructure.Messaging.RabbitMqPublisher.InitializeRabbitMQAsync() in D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.Infrastructure\Messaging\RabbitMqPublisher.cs:line 47
+[2026-04-12 15:25:33.274 +07:00] [INF] Application is shutting down...
+[2026-04-12 15:25:33.280 +07:00] [INF] RabbitMQ connection disposed in Friend service
+[2026-04-12 15:25:33.282 +07:00] [INF] Friend.API shutting down
+[2026-04-12 15:25:36.097 +07:00] [INF] Application pipeline configured
+[2026-04-12 15:25:36.217 +07:00] [INF] Database context retrieved for migration check
+[2026-04-12 15:25:36.219 +07:00] [INF] Friend.API started successfully. Listening on specified port
+[2026-04-12 15:25:36.278 +07:00] [INF] Now listening on: http://localhost:5176
+[2026-04-12 15:25:36.281 +07:00] [INF] Application started. Press Ctrl+C to shut down.
+[2026-04-12 15:25:36.281 +07:00] [INF] Hosting environment: Development
+[2026-04-12 15:25:36.282 +07:00] [INF] Content root path: D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.API
+[2026-04-12 15:25:47.185 +07:00] [INF] RabbitMQ connection established successfully for Friend service
+[2026-04-12 15:25:49.496 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 15:26:37.383 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 15:26:37.724 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 16:23:27.326 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 16:23:27.327 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 16:23:27.459 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 16:32:13.953 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 16:46:32.764 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 16:57:08.766 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-12 17:01:30.368 +07:00] [INF] Application is shutting down...
+[2026-04-12 17:01:30.395 +07:00] [INF] RabbitMQ connection disposed in Friend service
+[2026-04-12 17:01:30.397 +07:00] [INF] Friend.API shutting down

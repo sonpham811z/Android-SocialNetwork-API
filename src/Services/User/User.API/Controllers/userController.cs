@@ -1,4 +1,5 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +29,20 @@ namespace User.API.Controllers
         {
             var result = await _profileService.GetProfileByIdAsync(id);
             
+            if (!result.Success)
+                return NotFound(result);
+
+            return Ok(result);
+        }
+
+        // GET: api/userprofile/userid/{userId}
+        [HttpGet("userid/{userId:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetProfileByUserId(Guid userId)
+        {
+            var result = await _profileService.GetProfileByUserIdAsync(userId);
+
             if (!result.Success)
                 return NotFound(result);
 
@@ -226,7 +241,9 @@ namespace User.API.Controllers
                 throw new UnauthorizedAccessException("User is not logged in."); 
             }
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst("sub")?.Value;
 
             if (Guid.TryParse(userIdClaim, out var userId))
             {

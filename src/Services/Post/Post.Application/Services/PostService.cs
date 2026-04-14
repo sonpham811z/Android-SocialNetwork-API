@@ -274,20 +274,26 @@ namespace Post.Application.Services
             try
             {
                 var post = await _unitOfWork.Posts.GetByIdAsync(postId);
-                
                 if (post == null || post.IsDeleted)
                     return ApiResponse<bool>.ErrorResponse("Post not found");
 
-                var existingLike = await _unitOfWork.PostLikes.GetByPostAndUserAsync(postId, userId);
+                var existingLike = await _unitOfWork.PostLikes.GetByPostAndUserIncludingDeletedAsync(postId, userId);
                 if (existingLike != null && !existingLike.IsDeleted)
-                    return ApiResponse<bool>.ErrorResponse("You already liked this post");
+                    return ApiResponse<bool>.SuccessResponse(true, "Post already liked");
 
-                post.AddLike(userId);
-                await _unitOfWork.Posts.UpdateAsync(post);
+                if (existingLike != null)
+                {
+                    existingLike.RestoreLike();
+                }
+                else
+                {
+                    var newLike = PostLike.Create(postId, userId);
+                    await _unitOfWork.PostLikes.AddAsync(newLike);
+                }
+                await _unitOfWork.SaveChangesAsync(); 
+
+                post.IncrementLikesCount();
                 await _unitOfWork.SaveChangesAsync();
-
-                // Publish event
-                await _messagePublisher.PublishPostLikedAsync(postId, userId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "Post liked successfully");
             }
@@ -302,12 +308,17 @@ namespace Post.Application.Services
             try
             {
                 var post = await _unitOfWork.Posts.GetByIdAsync(postId);
-                
                 if (post == null || post.IsDeleted)
                     return ApiResponse<bool>.ErrorResponse("Post not found");
 
-                post.RemoveLike(userId);
-                await _unitOfWork.Posts.UpdateAsync(post);
+                var existingLike = await _unitOfWork.PostLikes.GetByPostAndUserAsync(postId, userId);
+                if (existingLike == null)
+                    return ApiResponse<bool>.ErrorResponse("You have not liked this post");
+
+                existingLike.SoftDelete();
+                await _unitOfWork.SaveChangesAsync();
+
+                post.DecrementLikesCount();
                 await _unitOfWork.SaveChangesAsync();
 
                 return ApiResponse<bool>.SuccessResponse(true, "Post unliked successfully");
@@ -322,6 +333,18 @@ namespace Post.Application.Services
         private async Task<PostDto> MapToPostDtoAsync(Domain.Entities.Post post, Guid? currentUserId = null)
         {
             var userProfile = await _userProfileClient.GetUserProfileAsync(post.UserId);
+            
+            // Fallback to default UserProfileDto if not found
+            if (userProfile == null)
+            {
+                userProfile = new UserProfileDto 
+                { 
+                    Id = post.UserId, 
+                    Name = "Unknown User", 
+                    UserName = "unknown",
+                    FullName = "Unknown User"
+                };
+            }
             
             bool isLiked = false;
             if (currentUserId.HasValue)
@@ -343,7 +366,7 @@ namespace Post.Application.Services
                         Id = comment.Id,
                         PostId = comment.PostId,
                         UserId = comment.UserId,
-                        User = commentUser ?? new UserProfileDto { Id = comment.UserId, Name = "Unknown User", UserName = "unknown" },
+                        User = commentUser ?? new UserProfileDto { Id = comment.UserId, Name = "Unknown User", UserName = "unknown", FullName = "Unknown User" },
                         Content = comment.Content,
                         ParentCommentId = comment.ParentCommentId,
                         CreatedAt = comment.CreatedAt,
@@ -356,7 +379,7 @@ namespace Post.Application.Services
             {
                 Id = post.Id,
                 UserId = post.UserId,
-                User = userProfile ?? new UserProfileDto { Id = post.UserId, Name = "Unknown User", UserName = "unknown" },
+                User = userProfile,
                 Content = post.Content,
                 Type = post.Type.ToString(),
                 ImageUrl = post.ImageUrl,

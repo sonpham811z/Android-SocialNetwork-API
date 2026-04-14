@@ -27,7 +27,11 @@ namespace Post.Domain.Entities
                 IsDeleted = false
             };
         }
-        
+        public void RestoreLike()
+        {
+            IsDeleted = false;
+            DeletedAt = null; 
+        }
         public void SoftDelete()
         {
             IsDeleted = true;
