@@ -51,14 +51,21 @@ namespace Post.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Domain.Entities.Post>> GetFeedPostsAsync(List<Guid> userIds, int page, int pageSize)
+        public async Task<IEnumerable<Domain.Entities.Post>> GetFeedPostsAsync(List<Guid> userIds, Guid currentUserId, int page, int pageSize)
         {
             return await _context.Posts
-                .Where(p => userIds.Contains(p.UserId) && p.Visibility == PostVisibility.Public)
+            .Where(p => userIds.Contains(p.UserId) && (p.Visibility == PostVisibility.Public || p.UserId == currentUserId))
                 .OrderByDescending(p => p.CreatedAt)
                 .Skip((page-1)*pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+        }
+
+        public async Task<int> GetFeedPostsCountAsync(List<Guid> userIds, Guid currentUserId)
+        {
+            return await _context.Posts
+            .Where(p => userIds.Contains(p.UserId) && (p.Visibility == PostVisibility.Public || p.UserId == currentUserId))
+            .CountAsync();
         }
 
         public async Task<IEnumerable<Domain.Entities.Post>> GetFeedPostsCursorAsync(

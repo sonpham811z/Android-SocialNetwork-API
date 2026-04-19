@@ -25,7 +25,7 @@ try
 
     // ── 2. Cấu hình Serilog chính thức (Đọc từ appsettings.json) ──
     builder.Host.UseSerilog((context, loggerConfiguration) => loggerConfiguration
-        .ReadFrom.Configuration(context.Configuration) // <--- DÒNG NÀY ĂN TIỀN NHẤT: Bắt buộc đọc file config để "bịt miệng" Microsoft
+        .ReadFrom.Configuration(context.Configuration) 
         .Enrich.FromLogContext()
         .Enrich.WithProperty("Service", "Friend.API")
         .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")

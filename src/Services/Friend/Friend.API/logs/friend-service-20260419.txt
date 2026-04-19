@@ -1,0 +1,162 @@
+[2026-04-19 16:22:43.242 +07:00] [INF] Application pipeline configured
+[2026-04-19 16:22:43.770 +07:00] [INF] Database context retrieved for migration check
+[2026-04-19 16:22:43.772 +07:00] [INF] Friend.API started successfully. Listening on specified port
+[2026-04-19 16:22:43.841 +07:00] [INF] Now listening on: http://localhost:5176
+[2026-04-19 16:22:43.844 +07:00] [INF] Application started. Press Ctrl+C to shut down.
+[2026-04-19 16:22:43.845 +07:00] [INF] Hosting environment: Development
+[2026-04-19 16:22:43.846 +07:00] [INF] Content root path: D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.API
+[2026-04-19 16:28:32.075 +07:00] [INF] RabbitMQ connection established successfully for Friend service
+[2026-04-19 16:28:34.111 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-19 16:44:24.625 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-19 16:44:24.794 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-19 17:02:30.983 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-19 17:02:49.332 +07:00] [ERR] Error batch fetching profiles from http://localhost:5000
+System.Net.Http.HttpRequestException: No connection could be made because the target machine actively refused it. (localhost:5000)
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.ConnectAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.CreateHttp11ConnectionAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.InjectNewHttp11ConnectionAsync(QueueItem queueItem)
+   at System.Threading.Tasks.TaskCompletionSourceWithCancellation`1.WaitWithCancellationAsync(CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.DiagnosticsHandler.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.SocketsHttpHandler.<SendAsync>g__CreateHandlerAndSendAsync|115_0(HttpRequestMessage request, CancellationToken cancellationToken)
+   at Microsoft.Extensions.Http.Logging.LoggingHttpMessageHandler.<SendCoreAsync>g__Core|4_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
+   at Microsoft.Extensions.Http.Logging.LoggingScopeHttpMessageHandler.<SendCoreAsync>g__Core|4_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at Friend.Infrastructure.Services.UserProfileHttpClient.GetUserProfilesAsync(List`1 userIds) in D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.Infrastructure\Services\InfraServices.cs:line 70
+[2026-04-19 17:02:53.670 +07:00] [ERR] Error batch fetching profiles from http://localhost:5000
+System.Net.Http.HttpRequestException: No connection could be made because the target machine actively refused it. (localhost:5000)
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.ConnectAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.CreateHttp11ConnectionAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.InjectNewHttp11ConnectionAsync(QueueItem queueItem)
+   at System.Threading.Tasks.TaskCompletionSourceWithCancellation`1.WaitWithCancellationAsync(CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.DiagnosticsHandler.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.Extensions.Http.Logging.LoggingHttpMessageHandler.<SendCoreAsync>g__Core|4_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
+   at Microsoft.Extensions.Http.Logging.LoggingScopeHttpMessageHandler.<SendCoreAsync>g__Core|4_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at Friend.Infrastructure.Services.UserProfileHttpClient.GetUserProfilesAsync(List`1 userIds) in D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.Infrastructure\Services\InfraServices.cs:line 70
+[2026-04-19 17:05:36.868 +07:00] [INF] Application is shutting down...
+[2026-04-19 17:05:36.896 +07:00] [INF] RabbitMQ connection disposed in Friend service
+[2026-04-19 17:05:36.898 +07:00] [INF] Friend.API shutting down
+[2026-04-19 17:05:41.418 +07:00] [INF] Application pipeline configured
+[2026-04-19 17:05:41.557 +07:00] [INF] Database context retrieved for migration check
+[2026-04-19 17:05:41.559 +07:00] [INF] Friend.API started successfully. Listening on specified port
+[2026-04-19 17:05:41.623 +07:00] [INF] Now listening on: http://localhost:5176
+[2026-04-19 17:05:41.626 +07:00] [INF] Application started. Press Ctrl+C to shut down.
+[2026-04-19 17:05:41.627 +07:00] [INF] Hosting environment: Development
+[2026-04-19 17:05:41.628 +07:00] [INF] Content root path: D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.API
+[2026-04-19 17:09:51.661 +07:00] [INF] RabbitMQ connection established successfully for Friend service
+[2026-04-19 17:09:54.421 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 0,
+  "HasNext": false
+}
+[2026-04-19 17:09:57.048 +07:00] [INF] Successfully fetched 2 profiles from User Service
+[2026-04-19 17:10:57.852 +07:00] [INF] Successfully fetched 2 profiles from User Service
+[2026-04-19 17:10:58.255 +07:00] [INF] Successfully fetched 2 profiles from User Service
+[2026-04-19 17:11:29.573 +07:00] [INF] Successfully fetched 2 profiles from User Service
+[2026-04-19 17:11:29.574 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [
+    {
+      "Id": "fb6b56ff-bc88-401e-a022-ba735cddcee1",
+      "Sender": {
+        "id": "238f5303-819c-4321-8179-cb6cf4360920",
+        "userId": "99dc2810-620d-4a02-985d-67ed0b5d2dac",
+        "fullName": "Saito Pham",
+        "username": "sonpham811205",
+        "profilePictureUrl": null
+      },
+      "Receiver": {
+        "id": "9fea1919-20c5-40c6-b38c-d358d8499eb6",
+        "userId": "d01f3e85-962f-422a-b77c-a06fe4c223b5",
+        "fullName": "son pham",
+        "username": "thaisonpham243",
+        "profilePictureUrl": "https://res.cloudinary.com/sonpham811205/image/upload/v1776363201/profile_pictures/akpbnz20htt3hsl1n9ar.jpg"
+      },
+      "Status": "Pending",
+      "CreatedAt": "2026-04-19T10:10:57.634933Z",
+      "UpdatedAt": null
+    }
+  ],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 1,
+  "HasNext": false
+}
+[2026-04-19 17:11:30.060 +07:00] [INF] Successfully fetched 2 profiles from User Service
+[2026-04-19 17:11:30.061 +07:00] [INF] Data bên trong Result:
+{
+  "Items": [
+    {
+      "Id": "fb6b56ff-bc88-401e-a022-ba735cddcee1",
+      "Sender": {
+        "id": "238f5303-819c-4321-8179-cb6cf4360920",
+        "userId": "99dc2810-620d-4a02-985d-67ed0b5d2dac",
+        "fullName": "Saito Pham",
+        "username": "sonpham811205",
+        "profilePictureUrl": null
+      },
+      "Receiver": {
+        "id": "9fea1919-20c5-40c6-b38c-d358d8499eb6",
+        "userId": "d01f3e85-962f-422a-b77c-a06fe4c223b5",
+        "fullName": "son pham",
+        "username": "thaisonpham243",
+        "profilePictureUrl": "https://res.cloudinary.com/sonpham811205/image/upload/v1776363201/profile_pictures/akpbnz20htt3hsl1n9ar.jpg"
+      },
+      "Status": "Pending",
+      "CreatedAt": "2026-04-19T10:10:57.634933Z",
+      "UpdatedAt": null
+    }
+  ],
+  "Page": 1,
+  "PageSize": 20,
+  "TotalCount": 1,
+  "HasNext": false
+}
+[2026-04-19 17:11:41.360 +07:00] [INF] Successfully fetched 2 profiles from User Service

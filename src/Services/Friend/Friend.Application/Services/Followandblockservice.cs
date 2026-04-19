@@ -38,22 +38,22 @@ namespace Friend.Application.Services
                     return ApiResponse<bool>.ErrorResponse("Unable to follow this user.");
 
                 var existing = await _unitOfWork.Follows.GetByUsersAsync(followerId, followeeId);
-                if (existing != null && !existing.IsDeleted)
-                    return ApiResponse<bool>.ErrorResponse("You are already following this user.");
-
-                Follow follow;
                 if (existing != null)
                 {
-                    // Re-follow after unfollow: restore by creating fresh record
-                    // (soft-delete pattern — simpler to add new row)
-                    follow = Follow.Create(followerId, followeeId);
+                    if (!existing.IsDeleted)
+                    {
+                        return ApiResponse<bool>.ErrorResponse("You are already following this user.");
+                    }
+
+                    existing.Restore();
+                    await _unitOfWork.Follows.UpdateAsync(existing);
                 }
                 else
                 {
-                    follow = Follow.Create(followerId, followeeId);
+                    var follow = Follow.Create(followerId, followeeId);
+                    await _unitOfWork.Follows.AddAsync(follow);
                 }
 
-                await _unitOfWork.Follows.AddAsync(follow);
                 await _unitOfWork.SaveChangesAsync();
 
                 // await _publisher.PublishUserFollowedAsync(followerId, followeeId);
@@ -247,6 +247,7 @@ namespace Friend.Application.Services
             try
             {
                 var blocks     = await _unitOfWork.Blocks.GetBlockedByUserAsync(blockerId, page, pageSize);
+                var totalCount = await _unitOfWork.Blocks.GetBlockedByUserCountAsync(blockerId);
                 var userIds    = blocks.Select(b => b.BlockedId).ToList();
                 var profiles   = await _userClient.GetUserProfilesAsync(userIds);
 
@@ -259,7 +260,7 @@ namespace Friend.Application.Services
 
                 return ApiResponse<PaginatedResponse<BlockDto>>.SuccessResponse(new PaginatedResponse<BlockDto>
                 {
-                    Items = dtos, Page = page, PageSize = pageSize, TotalCount = dtos.Count
+                    Items = dtos, Page = page, PageSize = pageSize, TotalCount = totalCount
                 });
             }
             catch (Exception ex)
