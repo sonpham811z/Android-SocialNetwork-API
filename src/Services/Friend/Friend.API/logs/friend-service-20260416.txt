@@ -1,7 +1,0 @@
-[2026-04-16 22:32:14.662 +07:00] [INF] Application pipeline configured
-[2026-04-16 22:32:15.303 +07:00] [INF] Database context retrieved for migration check
-[2026-04-16 22:32:15.306 +07:00] [INF] Friend.API started successfully. Listening on specified port
-[2026-04-16 22:32:15.415 +07:00] [INF] Now listening on: http://localhost:5176
-[2026-04-16 22:32:15.420 +07:00] [INF] Application started. Press Ctrl+C to shut down.
-[2026-04-16 22:32:15.421 +07:00] [INF] Hosting environment: Development
-[2026-04-16 22:32:15.422 +07:00] [INF] Content root path: D:\Code\SocialNetwork\Social Networking\Back_End\src\Services\Friend\Friend.API
