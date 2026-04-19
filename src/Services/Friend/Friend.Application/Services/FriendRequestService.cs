@@ -164,6 +164,7 @@ namespace Friend.Application.Services
             try
             {
                 var requests = await _unitOfWork.FriendRequests.GetSentRequestsAsync(userId, page, pageSize);
+                var totalCount = await _unitOfWork.FriendRequests.GetSentRequestsCountAsync(userId);
                 var dtos = new List<FriendRequestDto>();
                 foreach (var r in requests)
                     dtos.Add(await MapRequestDtoAsync(r));
@@ -173,7 +174,7 @@ namespace Friend.Application.Services
                     Items = dtos,
                     Page = page,
                     PageSize = pageSize,
-                    TotalCount = dtos.Count
+                    TotalCount = totalCount
                 });
             }
             catch (Exception ex)
@@ -187,6 +188,7 @@ namespace Friend.Application.Services
             try
             {
                 var requests = await _unitOfWork.FriendRequests.GetReceivedRequestsAsync(userId, page, pageSize);
+                var totalCount = await _unitOfWork.FriendRequests.GetReceivedRequestsCountAsync(userId);
                 _logger.LogDebug("Received friend requests: {@Requests}", requests);
                 
                 var dtos = new List<FriendRequestDto>();
@@ -198,7 +200,7 @@ namespace Friend.Application.Services
                     Items = dtos,
                     Page = page,
                     PageSize = pageSize,
-                    TotalCount = dtos.Count
+                    TotalCount = totalCount
                 });
             }
             catch (Exception ex)

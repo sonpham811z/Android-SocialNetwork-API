@@ -127,6 +127,7 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 // Register Infrastructure Services
 builder.Services.AddScoped<IMediaService, Mediaservice>();
 builder.Services.AddSingleton<IMessagePublisher, RabbitMqPublisher>();
+builder.Services.AddHttpContextAccessor();
 
 // Register HTTP Client for User Service
 builder.Services.AddHttpClient<IUserProfileHttpClient, UserProfileHttpClient>();

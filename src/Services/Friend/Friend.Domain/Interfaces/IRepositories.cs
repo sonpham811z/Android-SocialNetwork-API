@@ -30,6 +30,8 @@ namespace Friend.Domain.Interfaces
 
         Task<IEnumerable<FriendRequest>> GetSentRequestsAsync(Guid senderId, int page, int pageSize);
         Task<IEnumerable<FriendRequest>> GetReceivedRequestsAsync(Guid receiverId, int page, int pageSize);
+        Task<int> GetSentRequestsCountAsync(Guid senderId);
+        Task<int> GetReceivedRequestsCountAsync(Guid receiverId);
         Task<int> GetPendingReceivedCountAsync(Guid userId);
 
         Task<FriendRequest> AddAsync(FriendRequest request);
@@ -56,6 +58,7 @@ namespace Friend.Domain.Interfaces
         Task<Block?> GetByIdAsync(Guid id);
         Task<Block?> GetByUsersAsync(Guid blockerId, Guid blockedId);
         Task<IEnumerable<Block>> GetBlockedByUserAsync(Guid blockerId, int page, int pageSize);
+        Task<int> GetBlockedByUserCountAsync(Guid blockerId);
 
         /// <summary>True if either direction of block exists between the two users.</summary>
         Task<bool> IsBlockedAsync(Guid userA, Guid userB);

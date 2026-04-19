@@ -11,7 +11,8 @@ namespace Post.Domain.Interfaces
         Task<Entities.Post?> GetByIdWithCommentsAsync(Guid id);
         Task<Entities.Post?> GetByIdForLikeAsync(Guid id);
         Task<IEnumerable<Entities.Post>> GetUserPostsAsync(Guid userId, int page, int pageSize);
-        Task<IEnumerable<Entities.Post>> GetFeedPostsAsync(List<Guid> userIds, int page, int pageSize);
+        Task<IEnumerable<Entities.Post>> GetFeedPostsAsync(List<Guid> userIds, Guid currentUserId, int page, int pageSize);
+        Task<int> GetFeedPostsCountAsync(List<Guid> userIds, Guid currentUserId);
 
         //Remember implement this function in application service and api
         Task<IEnumerable<Entities.Post>> GetFeedPostsCursorAsync(List<Guid> userIds, DateTime? lastPostCreatedAt,  Guid? lastPostId, int pageSize);

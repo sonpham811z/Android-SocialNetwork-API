@@ -41,6 +41,7 @@ namespace Post.Application.Interfaces
     {
         Task<UserProfileDto?> GetUserProfileAsync(Guid userId);
         Task<List<UserProfileDto>> GetUserProfilesAsync(List<Guid> userIds);
+        Task<List<Guid>> GetFriendIdsAsync(Guid userId);
         Task<bool> UpdatePostsCountAsync(Guid userId, int count);
     }
 

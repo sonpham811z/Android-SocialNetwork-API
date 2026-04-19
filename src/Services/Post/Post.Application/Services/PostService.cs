@@ -87,9 +87,14 @@ namespace Post.Application.Services
         {
             try
             {
-                // TODO: Get user's friends/following list from User Service
-                // For now, just get all public posts
-                var posts = await _unitOfWork.Posts.GetAllPostsAsync(page, pageSize);
+                var feedUserIds = await _userProfileClient.GetFriendIdsAsync(currentUserId);
+                if (!feedUserIds.Contains(currentUserId))
+                {
+                    feedUserIds.Add(currentUserId);
+                }
+
+                var posts = await _unitOfWork.Posts.GetFeedPostsAsync(feedUserIds, currentUserId, page, pageSize);
+                var totalCount = await _unitOfWork.Posts.GetFeedPostsCountAsync(feedUserIds, currentUserId);
                 
                 var postDtos = new List<PostDto>();
                 foreach (var post in posts)
@@ -101,10 +106,11 @@ namespace Post.Application.Services
                 var response = new PaginatedResponse<PostDto>
                 {
                     Items = postDtos,
+                    TotalItems = totalCount,
                     Page = page,
                     PageSize = pageSize,
-                    TotalPages = 1,
-                    HasNextPage = false,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    HasNextPage = page * pageSize < totalCount,
                     HasPreviousPage = page > 1
                 };
 

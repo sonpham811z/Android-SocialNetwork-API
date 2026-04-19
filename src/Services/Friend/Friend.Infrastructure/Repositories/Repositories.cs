@@ -97,6 +97,12 @@ namespace Friend.Infrastructure.Repositories
                 .Skip((page - 1) * pageSize).Take(pageSize)
                 .ToListAsync();
 
+        public Task<int> GetSentRequestsCountAsync(Guid senderId) =>
+            _ctx.FriendRequests.CountAsync(r => r.SenderId == senderId && r.Status == FriendRequestStatus.Pending);
+
+        public Task<int> GetReceivedRequestsCountAsync(Guid receiverId) =>
+            _ctx.FriendRequests.CountAsync(r => r.ReceiverId == receiverId && r.Status == FriendRequestStatus.Pending);
+
         public Task<int> GetPendingReceivedCountAsync(Guid userId) =>
             _ctx.FriendRequests.CountAsync(r => r.ReceiverId == userId && r.Status == FriendRequestStatus.Pending);
 
@@ -183,6 +189,9 @@ namespace Friend.Infrastructure.Repositories
                 .OrderByDescending(b => b.CreatedAt)
                 .Skip((page - 1) * pageSize).Take(pageSize)
                 .ToListAsync();
+
+        public Task<int> GetBlockedByUserCountAsync(Guid blockerId) =>
+            _ctx.Blocks.CountAsync(b => b.BlockerId == blockerId);
 
         // Checks EITHER direction of block
         public Task<bool> IsBlockedAsync(Guid userA, Guid userB) =>
