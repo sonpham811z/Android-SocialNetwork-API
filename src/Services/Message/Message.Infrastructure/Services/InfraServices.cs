@@ -4,21 +4,12 @@ using Message.Application.Interfaces;
 using Message.Infrastructure.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
+// using StackExchange.Redis; // TODO: uncomment with Redis
 
 namespace Message.Infrastructure.Services;
 
-// ── Redis Online Status ───────────────────────────────────────────────────────
-
-/// <summary>
-/// Redis-backed online status tracker.
-/// Key:   "msg:online:{userId}"
-/// Value: "1"  (presence marker)
-/// TTL:   1 hour (acts as a safety net; explicitly deleted on hub disconnect)
-///
-/// This is the source of truth used by MessageService to decide whether to publish
-/// a MessageCreatedEvent (FCM push) or skip it (user already receives via SignalR).
-/// </summary>
+// ── TODO: Redis Online Status (uncomment when Redis is available) ─────────────
+/*
 public class RedisOnlineStatusService : IOnlineStatusService
 {
     private readonly IDatabase       _db;
@@ -37,15 +28,10 @@ public class RedisOnlineStatusService : IOnlineStatusService
     public async Task<bool> IsOnlineAsync(Guid userId)
         => await _db.KeyExistsAsync($"{KeyPrefix}{userId}");
 }
+*/
 
-// ── Redis Conversation Cache ──────────────────────────────────────────────────
-
-/// <summary>
-/// Caches ConversationDto in Redis to reduce MongoDB reads on hot paths
-/// (e.g., membership checks on every message send or hub join).
-/// Key: "msg:conv:{conversationId}"
-/// TTL: 5 minutes (invalidated on LastMessage update or member change)
-/// </summary>
+// ── TODO: Redis Conversation Cache (uncomment when Redis is available) ────────
+/*
 public class RedisConversationCacheService : IConversationCacheService
 {
     private readonly IDatabase       _db;
@@ -76,6 +62,25 @@ public class RedisConversationCacheService : IConversationCacheService
 
     public async Task InvalidateAsync(string conversationId)
         => await _db.KeyDeleteAsync($"{KeyPrefix}{conversationId}");
+}
+*/
+
+// ── No-op stubs (remove when Redis is available) ──────────────────────────────
+
+public class NullOnlineStatusService : IOnlineStatusService
+{
+    public Task SetOnlineAsync(Guid userId)  => Task.CompletedTask;
+    public Task SetOfflineAsync(Guid userId) => Task.CompletedTask;
+    // Always treat as offline → MessageCreatedEvent will always be published for offline push
+    public Task<bool> IsOnlineAsync(Guid userId) => Task.FromResult(false);
+}
+
+public class NullConversationCacheService : IConversationCacheService
+{
+    // Always cache miss → hits MongoDB every time (fine without Redis)
+    public Task<ConversationDto?> GetAsync(string conversationId)    => Task.FromResult<ConversationDto?>(null);
+    public Task SetAsync(ConversationDto conversation)               => Task.CompletedTask;
+    public Task InvalidateAsync(string conversationId)               => Task.CompletedTask;
 }
 
 // ── SignalR Message Service ───────────────────────────────────────────────────

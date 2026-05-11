@@ -1,3 +1,4 @@
+using Friend.API.Grpc;
 using Friend.Application.Interfaces;
 using Friend.Application.Services;
 using Friend.Domain.Interfaces;
@@ -6,6 +7,7 @@ using Friend.Infrastructure.Messaging;
 using Friend.Infrastructure.Repositories;
 using Friend.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -22,6 +24,17 @@ try
     
     var builder = WebApplication.CreateBuilder(args);
     var config = builder.Configuration;
+
+    // ── Kestrel: HTTP/2 only on 5176 to avoid HTTP_1_1_REQUIRED on cleartext gRPC ──
+    // Http1AndHttp2 on a cleartext port causes the server to accept the HTTP/2
+    // preface then send GOAWAY(HTTP_1_1_REQUIRED) before any data flows.
+    // Http2 only eliminates the negotiation ambiguity; REST controllers and gRPC
+    // both work fine over HTTP/2.
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(5176, o => o.Protocols = HttpProtocols.Http2);   // gRPC
+        options.ListenAnyIP(5178, o => o.Protocols = HttpProtocols.Http1);   // REST / Swagger
+    });
 
     // ── 2. Cấu hình Serilog chính thức (Đọc từ appsettings.json) ──
     builder.Host.UseSerilog((context, loggerConfiguration) => loggerConfiguration
@@ -90,6 +103,9 @@ try
 
     Log.Debug("JWT Bearer authentication configured");
 
+    // ── gRPC ────────────────────────────────────────────────────────────────
+    builder.Services.AddGrpc();
+
     builder.Services.AddAuthorization();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
@@ -109,6 +125,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapGrpcService<FriendshipGrpcService>();
 
     // Auto-migrate on startup (remove in production; use proper migration pipeline)
     using (var scope = app.Services.CreateScope())

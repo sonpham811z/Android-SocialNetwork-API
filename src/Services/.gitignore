@@ -1,17 +1,37 @@
-# Bỏ qua tất cả file appsettings có chứa chữ Development hoặc Production
+# =========================================
+# 1. Bỏ qua các file và folder Build/Biên dịch
+# =========================================
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/
+
+# =========================================
+# 2. Bỏ qua các file cấu hình nhạy cảm
+# =========================================
+# (GIỮ LẠI appsettings.json để làm template cho team)
+# Bỏ qua mọi file appsettings theo môi trường
 **/appsettings.Development.json
 **/appsettings.Production.json
 **/appsettings.Secret.json
-# Loại bỏ các folder build
-**/bin/
-**/obj/
-[Bb]in/
-[Oo]bj/
+**/appsettings.*.json
+secrets.json
 
+# =========================================
+# 3. Bỏ qua thư mục sinh ra khi chạy App (Log/Data)
+# =========================================
+**/logs/
+*.log
+*.sqlite
+*.db
 # Loại bỏ các file cấu hình chứa key nhạy cảm
 appsettings.json
 appsettings.*.json
-
-# Nếu dùng Visual Studio
+# =========================================
+# 4. Môi trường IDE và Hệ điều hành (Visual Studio, VS Code, Rider, Mac)
+# =========================================
 .vs/
 *.user
+.vscode/
+.idea/
+.DS_Store

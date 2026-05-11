@@ -9,7 +9,10 @@ using Message.Infrastructure.Repositories;
 using Message.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using StackExchange.Redis;
+// using StackExchange.Redis; // TODO: uncomment with Redis
+
+// Allow unencrypted HTTP/2 for gRPC client → Friend Service (development)
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 var builder = WebApplication.CreateBuilder(args);
 var config  = builder.Configuration;
@@ -18,9 +21,10 @@ var config  = builder.Configuration;
 builder.Services.AddSingleton<MongoDbContext>();
 
 // ── Redis ─────────────────────────────────────────────────────────────────────
-builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
-    ConnectionMultiplexer.Connect(config.GetConnectionString("Redis")
-        ?? throw new InvalidOperationException("Redis connection string is not configured.")));
+// TODO: uncomment when Redis is available
+// builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+//     ConnectionMultiplexer.Connect(config.GetConnectionString("Redis")
+//         ?? throw new InvalidOperationException("Redis connection string is not configured.")));
 
 // ── Repositories ──────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
@@ -31,8 +35,9 @@ builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 
 // ── Infrastructure Services ───────────────────────────────────────────────────
-builder.Services.AddSingleton<IOnlineStatusService, RedisOnlineStatusService>();
-builder.Services.AddSingleton<IConversationCacheService, RedisConversationCacheService>();
+// TODO: swap back to Redis implementations when Redis is available
+builder.Services.AddSingleton<IOnlineStatusService, NullOnlineStatusService>();
+builder.Services.AddSingleton<IConversationCacheService, NullConversationCacheService>();
 builder.Services.AddScoped<ISignalRMessageService, SignalRMessageService>();
 
 // Publisher is singleton because the RabbitMQ channel is reused across requests
@@ -110,7 +115,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── Global exception handling ─────────────────────────────────────────────────
-builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
@@ -127,7 +131,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseExceptionHandler();
+app.UseExceptionHandler(exApp => exApp.Run(async ctx =>
+{
+    var ex = ctx.Features
+        .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+    if (ex is null) return;
+
+    ctx.Response.ContentType = "application/json";
+    ctx.Response.StatusCode  = ex switch
+    {
+        ArgumentException or InvalidOperationException => StatusCodes.Status400BadRequest,
+        KeyNotFoundException                           => StatusCodes.Status404NotFound,
+        UnauthorizedAccessException                    => StatusCodes.Status403Forbidden,
+        _                                              => StatusCodes.Status500InternalServerError
+    };
+
+    await ctx.Response.WriteAsJsonAsync(
+        Message.Application.DTOs.ApiResponse<object>.Fail(ex.Message));
+}));
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

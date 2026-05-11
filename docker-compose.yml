@@ -1,0 +1,146 @@
+version: '3.8'
+
+# ── Infrastructure ─────────────────────────────────────────────────────────────
+# Databases (PostgreSQL/Neon, MongoDB Atlas, Cloudinary) remain cloud-hosted.
+# Only RabbitMQ and Redis run as containers since they are currently localhost-bound.
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+# ── Microservices ──────────────────────────────────────────────────────────────
+
+  identity:
+    build:
+      context: ./src/Services/Identity
+      dockerfile: Dockerfile
+    container_name: identity-service
+    ports:
+      - "5210:5210"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5210
+      RabbitMQ__Host: rabbitmq
+      # Update App__BaseUrl to your VPS IP or domain for email verification links
+      App__BaseUrl: http://YOUR_VPS_IP:5210
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+  friend:
+    build:
+      context: ./src/Services/Friend
+      dockerfile: Dockerfile
+    container_name: friend-service
+    ports:
+      - "5176:5176"   # gRPC (HTTP/2)
+      - "5178:5178"   # REST (HTTP/1)
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # ASPNETCORE_URLS is NOT set here — Kestrel ports are configured in Program.cs
+      RabbitMQ__Host: rabbitmq
+      Services__UserService__BaseUrl: http://user:5220
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+  message:
+    build:
+      context: ./src/Services/Message
+      dockerfile: Dockerfile
+    container_name: message-service
+    ports:
+      - "5177:5177"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5177
+      RabbitMQ__Host: rabbitmq
+      ConnectionStrings__Redis: redis:6379
+      GrpcServices__FriendService: http://friend:5176
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      friend:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+  post:
+    build:
+      context: ./src/Services/Post
+      dockerfile: Dockerfile
+    container_name: post-service
+    ports:
+      - "5175:5175"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5175
+      RabbitMQ__Host: rabbitmq
+      Services__UserService__BaseUrl: http://user:5220
+      Services__FriendService__BaseUrl: http://friend:5178
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      friend:
+        condition: service_started
+      user:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+  user:
+    build:
+      context: ./src/Services/User
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "5220:5220"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5220
+      RabbitMQ__Host: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - socialnet
+
+networks:
+  socialnet:
+    driver: bridge

@@ -76,6 +76,7 @@ public class ConversationService : IConversationService
     public async Task<IEnumerable<ConversationDto>> GetUserConversationsAsync(Guid userId)
     {
         var conversations = await _convRepo.GetByUserIdAsync(userId);
+        Console.WriteLine($"[ConversationService] Retrieved {conversations.Count()} conversations for user {userId}");
         return conversations.Select(MapToDto);
     }
 
