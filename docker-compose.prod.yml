@@ -1,0 +1,48 @@
+# Production override — used together with docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d --no-build
+#
+# This file:
+#   1. Replaces build context with pre-built GHCR images
+#   2. Injects secrets from .env (overrides appsettings.json values at runtime)
+
+services:
+
+  identity:
+    image: ghcr.io/${IMAGE_OWNER}/socialnet-identity:${IMAGE_TAG:-latest}
+    environment:
+      ConnectionStrings__DefaultConnection: ${DB_CONNECTION}
+      Jwt__SecretKey: ${JWT_SECRET}
+      Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
+      Email__ApiKey: ${BREVO_API_KEY}
+      App__BaseUrl: ${APP_BASE_URL}
+
+  friend:
+    image: ghcr.io/${IMAGE_OWNER}/socialnet-friend:${IMAGE_TAG:-latest}
+    environment:
+      ConnectionStrings__DefaultConnection: ${DB_CONNECTION}
+      Jwt__SecretKey: ${JWT_SECRET}
+
+  user:
+    image: ghcr.io/${IMAGE_OWNER}/socialnet-user:${IMAGE_TAG:-latest}
+    environment:
+      ConnectionStrings__DefaultConnection: ${DB_CONNECTION}
+      Jwt__SecretKey: ${JWT_SECRET}
+      Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
+      Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
+      Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
+
+  post:
+    image: ghcr.io/${IMAGE_OWNER}/socialnet-post:${IMAGE_TAG:-latest}
+    environment:
+      ConnectionStrings__DefaultConnection: ${DB_CONNECTION}
+      Jwt__SecretKey: ${JWT_SECRET}
+      Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
+      Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
+      Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
+
+  message:
+    image: ghcr.io/${IMAGE_OWNER}/socialnet-message:${IMAGE_TAG:-latest}
+    environment:
+      ConnectionStrings__MongoDB: ${MONGODB_CONNECTION}
+      Jwt__Key: ${JWT_SECRET}
