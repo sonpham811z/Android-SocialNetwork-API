@@ -4,7 +4,7 @@ on:
   push:
     branches: [production]
     paths:
-      - 'Back_End/**'
+      - 'src/Services/**'
   workflow_dispatch:
 
 env:
@@ -25,15 +25,15 @@ jobs:
       matrix:
         service:
           - name: identity
-            context: Back_End/src/Services/Identity
+            context: src/Services/Identity
           - name: friend
-            context: Back_End/src/Services/Friend
+            context: src/Services/Friend
           - name: user
-            context: Back_End/src/Services/User
+            context: src/Services/User
           - name: post
-            context: Back_End/src/Services/Post
+            context: src/Services/Post
           - name: message
-            context: Back_End/src/Services/Message
+            context: src/Services/Message
 
     steps:
       - name: Checkout code
