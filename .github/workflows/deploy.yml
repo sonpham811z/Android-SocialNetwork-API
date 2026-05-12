@@ -85,9 +85,11 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "Back_End/docker-compose.yml,Back_End/docker-compose.prod.yml"
+          # Bỏ chữ Back_End/ đi vì file nằm ở thư mục gốc
+          source: "docker-compose.yml,docker-compose.prod.yml" 
           target: "/opt/socialnet"
-          strip_components: 1
+          # Đổi cái này thành 0 vì mình không cần bỏ qua thư mục cha nào cả
+          strip_components: 0
 
       - name: Deploy on VM
         uses: appleboy/ssh-action@v1.0.3
