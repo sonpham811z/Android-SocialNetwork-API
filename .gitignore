@@ -24,9 +24,9 @@ secrets.json
 *.log
 *.sqlite
 *.db
-# Loại bỏ các file cấu hình chứa key nhạy cảm
+# LƯU Ý: Đã comment dòng dưới để không bị đá với phần 2 (giữ lại template)
 appsettings.json
-appsettings.*.json
+
 # =========================================
 # 4. Môi trường IDE và Hệ điều hành (Visual Studio, VS Code, Rider, Mac)
 # =========================================
@@ -35,3 +35,14 @@ appsettings.*.json
 .vscode/
 .idea/
 .DS_Store
+
+# =========================================
+# 5. Cấu hình Terraform (Tránh push file nặng và state)
+# =========================================
+# Bỏ qua thư mục chứa provider plugin tải về (nặng hàng trăm MB)
+**/.terraform/
+# Bỏ qua file state chứa thông tin cấu hình và dữ liệu thật
+*.tfstate
+*.tfstate.backup
+# Bỏ qua file lock version của provider
+.terraform.lock.hcl

@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     azurerm = {
-        source = "hashicorp/azurerm"
-        version = "~> 3.0"
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
     }
   }
 }
@@ -21,46 +21,13 @@ variable "vm_admin_password" {
   sensitive   = true
 }
 
-# Create a resource group
+# 1. Create a resource group
 resource "azurerm_resource_group" "rg" {
   name     = "SocialNetwork"
   location = "East Asia"
 }
 
-# 1. Tạo Log Analytics Workspace (Để lưu log và monitor hệ thống, sau này sẽ kết nối với Application Insights)
-resource "azurerm_log_analytics_workspace" "law" {
-  name                = "socialnetwork-law"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-}
-
-# 2. Tạo Application Insights (Dùng để monitor traffic)
-resource "azurerm_application_insights" "appinsights" {
-  name                = "socialnetwork-appinsights"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  application_type    = "web"
-  workspace_id        = azurerm_log_analytics_workspace.law.id
-}
-
-# 4. Lấy thông tin tenant hiện tại để cấu hình Key Vault
-data "azurerm_client_config" "current" {}
-
-# 5. Tạo Azure Key Vault
-resource "azurerm_key_vault" "kv" {
-  name                        = "socialnetwork-kv2026" 
-  location                    = azurerm_resource_group.rg.location
-  resource_group_name         = azurerm_resource_group.rg.name
-  enabled_for_disk_encryption = true
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  soft_delete_retention_days  = 7
-  purge_protection_enabled    = false
-  sku_name                    = "standard"
-}
-
-# 8. Tạo Virtual Network (Mạng ảo cho VM)
+# 2. Tạo Virtual Network (Mạng ảo cho VM)
 resource "azurerm_virtual_network" "vnet" {
   name                = "socialnetwork-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -68,7 +35,7 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-# 9. Tạo Subnet
+# 3. Tạo Subnet
 resource "azurerm_subnet" "subnet" {
   name                 = "socialnetwork-subnet"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -76,7 +43,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
-# 10. Tạo Public IP (Để truy cập Jenkins qua trình duyệt)
+# 4. Tạo Public IP (Để truy cập SSH và Jenkins qua trình duyệt)
 resource "azurerm_public_ip" "pip" {
   name                = "socialnetwork-jenkins-pip"
   location            = azurerm_resource_group.rg.location
@@ -85,7 +52,7 @@ resource "azurerm_public_ip" "pip" {
   sku                 = "Standard"
 }
 
-# 11. Tạo Network Security Group (Mở cửa cho Port 22 và 8080)
+# 5. Tạo Network Security Group (Mở cửa cho Port 22 và 8080)
 resource "azurerm_network_security_group" "nsg" {
   name                = "socialnetwork-nsg"
   location            = azurerm_resource_group.rg.location
@@ -116,7 +83,7 @@ resource "azurerm_network_security_group" "nsg" {
   }
 }
 
-# 12. Tạo Card mạng (NIC)
+# 6. Tạo Card mạng (NIC)
 resource "azurerm_network_interface" "nic" {
   name                = "socialnetwork-nic"
   location            = azurerm_resource_group.rg.location
@@ -130,13 +97,13 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
-# Gắn Rule bảo mật vào Card mạng
+# 7. Gắn Rule bảo mật (NSG) vào Card mạng (NIC)
 resource "azurerm_network_interface_security_group_association" "nsg_nic" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
 
-# 13. Tạo Máy ảo Ubuntu (VM) chạy Jenkins
+# 8. Tạo Máy ảo Ubuntu (VM) 
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = "socialnetwork-vm"
   resource_group_name = azurerm_resource_group.rg.name
