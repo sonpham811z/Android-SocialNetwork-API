@@ -46,3 +46,4 @@ appsettings.json
 *.tfstate.backup
 # Bỏ qua file lock version của provider
 .terraform.lock.hcl
+*.tfvars
