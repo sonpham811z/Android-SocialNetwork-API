@@ -46,6 +46,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5210
       RabbitMQ__Host: rabbitmq
+      Jwt__Issuer: SocialNetworkIdentityAPI
+      Jwt__Audience: SocialNetworkClient
       # Update App__BaseUrl to your VPS IP or domain for email verification links
       App__BaseUrl: http://YOUR_VPS_IP:5210
     depends_on:
@@ -67,6 +69,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       # ASPNETCORE_URLS is NOT set here — Kestrel ports are configured in Program.cs
       RabbitMQ__Host: rabbitmq
+      Jwt__Issuer: SocialNetworkIdentityAPI
+      Jwt__Audience: SocialNetworkClient
       Services__UserService__BaseUrl: http://user:5220
     depends_on:
       rabbitmq:
@@ -86,6 +90,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5177
       RabbitMQ__Host: rabbitmq
+      Jwt__Issuer: SocialNetworkIdentityAPI
+      Jwt__Audience: SocialNetworkClient
       ConnectionStrings__Redis: redis:6379
       GrpcServices__FriendService: http://friend:5176
     depends_on:
@@ -110,6 +116,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5175
       RabbitMQ__Host: rabbitmq
+      Jwt__Issuer: SocialNetworkIdentityAPI
+      Jwt__Audience: SocialNetworkClient
       Services__UserService__BaseUrl: http://user:5220
       Services__FriendService__BaseUrl: http://friend:5178
     depends_on:
@@ -133,7 +141,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5220
+      ServiceUrl: http://0.0.0.0:5220
       RabbitMQ__Host: rabbitmq
+      Jwt__Issuer: SocialNetworkIdentityAPI
+      Jwt__Audience: SocialNetworkClient
     depends_on:
       rabbitmq:
         condition: service_healthy
