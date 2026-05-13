@@ -19,8 +19,9 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Keep User API on a stable port that matches frontend configuration.
-var serviceUrl = builder.Configuration["ServiceUrl"] ?? "http://0.0.0.0:5210";
+// Port is controlled by ASPNETCORE_URLS env var in docker-compose.
+// Fallback to 5220 when running locally without env override.
+var serviceUrl = builder.Configuration["ServiceUrl"] ?? "http://0.0.0.0:5220";
 builder.WebHost.UseUrls(serviceUrl);
 
 //Controller + swagger
