@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Post.Application.DTOs;
 using Post.Application.Interfaces;
@@ -52,10 +53,16 @@ namespace Post.Application.Services
                 var commentDtos = new List<CommentDto>();
                 var userIds = comments.Select(c => c.UserId).Distinct().ToList();
                 var users = await _userProfileClient.GetUserProfilesAsync(userIds);
+               
 
                 foreach (var comment in comments.Where(c => !c.IsDeleted))
                 {
-                    var user = users.FirstOrDefault(u => u.Id == comment.UserId);
+                    Console.WriteLine(JsonSerializer.Serialize(comment));
+                    Console.WriteLine("-------------------------------------");
+                    
+                    var user = users.FirstOrDefault(u => u.UserId == comment.UserId);
+                    
+                    Console.WriteLine(JsonSerializer.Serialize(user));
                     commentDtos.Add(new CommentDto
                     {
                         Id = comment.Id,
