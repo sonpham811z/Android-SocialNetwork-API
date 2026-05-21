@@ -14,6 +14,8 @@ namespace Post.Infrastructure.Data
         public DbSet<Domain.Entities.Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<Story> Stories { get; set; }
+        public DbSet<StoryView> StoryViews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -93,6 +95,47 @@ namespace Post.Infrastructure.Data
 
                 // Query filters for soft delete
                 entity.HasQueryFilter(c => !c.IsDeleted);
+            });
+
+            // Story Configuration
+            modelBuilder.Entity<Story>(entity =>
+            {
+                entity.ToTable("Stories");
+                entity.HasKey(s => s.Id);
+
+                entity.Property(s => s.UserId).IsRequired();
+                entity.Property(s => s.MediaUrl).HasMaxLength(500);
+                entity.Property(s => s.MediaPublicId).HasMaxLength(200);
+                entity.Property(s => s.ThumbnailUrl).HasMaxLength(500);
+                entity.Property(s => s.ThumbnailPublicId).HasMaxLength(200);
+                entity.Property(s => s.MediaType).IsRequired();
+                entity.Property(s => s.CreatedAt).IsRequired();
+                entity.Property(s => s.ExpiresAt).IsRequired();
+
+                entity.HasIndex(s => s.UserId);
+                entity.HasIndex(s => s.ExpiresAt);
+                entity.HasIndex(s => new { s.UserId, s.ExpiresAt });
+
+                entity.HasMany(s => s.Views)
+                    .WithOne(v => v.Story)
+                    .HasForeignKey(v => v.StoryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(s => !s.IsDeleted && s.ExpiresAt > DateTime.UtcNow);
+            });
+
+            // StoryView Configuration
+            modelBuilder.Entity<StoryView>(entity =>
+            {
+                entity.ToTable("StoryViews");
+                entity.HasKey(v => v.Id);
+
+                entity.Property(v => v.StoryId).IsRequired();
+                entity.Property(v => v.ViewerId).IsRequired();
+                entity.Property(v => v.ViewedAt).IsRequired();
+
+                entity.HasIndex(v => new { v.StoryId, v.ViewerId }).IsUnique();
+                entity.HasIndex(v => v.ViewerId);
             });
 
             // PostLike Configuration

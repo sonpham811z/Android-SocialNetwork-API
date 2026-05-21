@@ -33,8 +33,22 @@ namespace Post.Application.Interfaces
     {
         Task<(string Url, string PublicId)> UploadImageAsync(IFormFile file, string folder = "posts");
         Task<(string Url, string PublicId, string Duration, List<double> Waveform)> UploadAudioAsync(IFormFile file, string folder = "posts/audio");
+        Task<(string Url, string PublicId, string? ThumbnailUrl, string? ThumbnailPublicId)> UploadVideoAsync(IFormFile file, string folder = "stories/video");
         Task<bool> DeleteImageAsync(string publicId);
         Task<bool> DeleteAudioAsync(string publicId);
+        Task<bool> DeleteVideoAsync(string publicId);
+    }
+
+    public interface IStoryService
+    {
+        Task<ApiResponse<List<StoryFeedItemDto>>> GetStoryFeedAsync(Guid currentUserId);
+        Task<ApiResponse<List<StoryDto>>> GetUserStoriesAsync(Guid userId, Guid? currentUserId);
+        Task<ApiResponse<StoryDto>> GetStoryByIdAsync(Guid storyId, Guid? currentUserId);
+        Task<ApiResponse<StoryDto>> CreateImageStoryAsync(Guid userId, IFormFile file);
+        Task<ApiResponse<StoryDto>> CreateVideoStoryAsync(Guid userId, IFormFile file);
+        Task<ApiResponse<bool>> DeleteStoryAsync(Guid storyId, Guid currentUserId);
+        Task<ApiResponse<bool>> ViewStoryAsync(Guid storyId, Guid viewerId);
+        Task<ApiResponse<List<StoryViewerDto>>> GetStoryViewersAsync(Guid storyId, Guid currentUserId);
     }
 
     public interface IUserProfileHttpClient

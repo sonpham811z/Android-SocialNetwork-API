@@ -44,11 +44,24 @@ namespace Post.Domain.Interfaces
         Task DeleteAsync(Guid id);
     }
 
+    public interface IStoryRepository
+    {
+        Task<Entities.Story?> GetByIdAsync(Guid id);
+        Task<Entities.Story?> GetByIdWithViewsAsync(Guid id);
+        Task<IEnumerable<Entities.Story>> GetUserActiveStoriesAsync(Guid userId);
+        Task<IEnumerable<Entities.Story>> GetFeedStoriesAsync(List<Guid> userIds);
+        Task<bool> HasUserViewedStoryAsync(Guid storyId, Guid viewerId);
+        Task<Entities.Story> AddAsync(Entities.Story story);
+        Task UpdateAsync(Entities.Story story);
+        Task<Entities.StoryView> AddViewAsync(Entities.StoryView view);
+    }
+
     public interface IUnitOfWork : IDisposable
     {
         IPostRepository Posts { get; }
         ICommentRepository Comments { get; }
         IPostLikeRepository PostLikes { get; }
+        IStoryRepository Stories { get; }
         Task<int> SaveChangesAsync();
         Task OpenConnectionAsync();
         Task CloseConnectionAsync();
