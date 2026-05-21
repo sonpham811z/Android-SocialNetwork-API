@@ -173,6 +173,85 @@ namespace Post.Infrastructure.Migrations
                     b.ToTable("PostLikes", "Post");
                 });
 
+            modelBuilder.Entity("Post.Domain.Entities.Story", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MediaPublicId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("MediaType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MediaUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ThumbnailPublicId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ViewsCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "ExpiresAt");
+
+                    b.ToTable("Stories", "Post");
+                });
+
+            modelBuilder.Entity("Post.Domain.Entities.StoryView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ViewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ViewedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ViewerId");
+
+                    b.HasIndex("StoryId", "ViewerId")
+                        .IsUnique();
+
+                    b.ToTable("StoryViews", "Post");
+                });
+
             modelBuilder.Entity("Post.Domain.Entities.Comment", b =>
                 {
                     b.HasOne("Post.Domain.Entities.Comment", "ParentComment")
@@ -202,11 +281,27 @@ namespace Post.Infrastructure.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("Post.Domain.Entities.StoryView", b =>
+                {
+                    b.HasOne("Post.Domain.Entities.Story", "Story")
+                        .WithMany("Views")
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+                });
+
             modelBuilder.Entity("Post.Domain.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("Post.Domain.Entities.Story", b =>
+                {
+                    b.Navigation("Views");
                 });
 #pragma warning restore 612, 618
         }

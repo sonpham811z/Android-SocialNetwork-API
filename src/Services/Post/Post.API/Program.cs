@@ -123,6 +123,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Register Application Services
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IStoryService, StoryService>();
 
 // Register Infrastructure Services
 builder.Services.AddScoped<IMediaService, Mediaservice>();

@@ -125,6 +125,45 @@ namespace Post.Infrastructure.Services
             }
         }
 
+        public async Task<(string Url, string PublicId, string? ThumbnailUrl, string? ThumbnailPublicId)> UploadVideoAsync(
+            IFormFile file, string folder = "stories/video")
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty");
+
+            var allowedExtensions = new[] { ".mp4", ".mov", ".avi", ".webm", ".mkv" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(extension))
+                throw new ArgumentException("Invalid file type. Only video files are allowed.");
+
+            if (file.Length > 100 * 1024 * 1024)
+                throw new ArgumentException("File size exceeds 100MB limit");
+
+            using var stream = file.OpenReadStream();
+
+            var uploadParams = new VideoUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = folder,
+                UniqueFilename = true,
+                Overwrite = false
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            if (uploadResult.Error != null)
+                throw new Exception($"Cloudinary upload error: {uploadResult.Error.Message}");
+
+            // Build thumbnail URL from the uploaded video using Cloudinary's URL transformation
+            // Cloudinary automatically generates frame thumbnails for video assets
+            var thumbnailUrl = _cloudinary.Api.UrlVideoUp
+                .Transform(new Transformation().Width(400).Height(700).Crop("fill").FetchFormat("jpg"))
+                .BuildUrl($"{uploadResult.PublicId}.jpg");
+
+            return (uploadResult.SecureUrl.ToString(), uploadResult.PublicId, thumbnailUrl, null);
+        }
+
         public async Task<bool> DeleteImageAsync(string publicId)
         {
             if (string.IsNullOrEmpty(publicId))
@@ -147,6 +186,27 @@ namespace Post.Infrastructure.Services
         }
 
         public async Task<bool> DeleteAudioAsync(string publicId)
+        {
+            if (string.IsNullOrEmpty(publicId))
+                return false;
+
+            try
+            {
+                var deleteParams = new DeletionParams(publicId)
+                {
+                    ResourceType = ResourceType.Video
+                };
+
+                var result = await _cloudinary.DestroyAsync(deleteParams);
+                return result.Result == "ok";
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteVideoAsync(string publicId)
         {
             if (string.IsNullOrEmpty(publicId))
                 return false;
