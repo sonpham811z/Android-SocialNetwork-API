@@ -58,7 +58,7 @@ namespace User.Infrastructure.Repositories
             var lowerSearchTerm = searchTerm.ToLower();
 
             return await _context.UserProfiles
-                .Where(p => !p.IsDeleted && 
+                .Where(p => !p.IsDeleted &&
                            (p.FirstName.ToLower().Contains(lowerSearchTerm) ||
                             p.LastName.ToLower().Contains(lowerSearchTerm) ||
                             p.UserName.ToLower().Contains(lowerSearchTerm)))
@@ -66,6 +66,16 @@ namespace User.Infrastructure.Repositories
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();
+        }
+
+        public async Task<int> CountByNameAsync(string searchTerm)
+        {
+            var lowerSearchTerm = searchTerm.ToLower();
+            return await _context.UserProfiles
+                .CountAsync(p => !p.IsDeleted &&
+                                 (p.FirstName.ToLower().Contains(lowerSearchTerm) ||
+                                  p.LastName.ToLower().Contains(lowerSearchTerm) ||
+                                  p.UserName.ToLower().Contains(lowerSearchTerm)));
         }
 
         public async Task<UserProfile> CreateAsync(UserProfile profile)

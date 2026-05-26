@@ -416,7 +416,11 @@ namespace User.Application.Services
             }
 
             var skip = (pageNumber - 1) * pageSize;
-            var profiles = await _profileRepository.SearchByNameAsync(searchTerm, skip, pageSize);
+            var searchTask = _profileRepository.SearchByNameAsync(searchTerm, skip, pageSize);
+            var countTask  = _profileRepository.CountByNameAsync(searchTerm);
+            await Task.WhenAll(searchTask, countTask);
+            var profiles   = searchTask.Result;
+            var totalCount = countTask.Result;
 
             var results = profiles.Select(p => new SearchResultDto
             {
@@ -431,7 +435,7 @@ namespace User.Application.Services
             var response = new PaginatedResponse<SearchResultDto>
             {
                 Items = results,
-                TotalCount = results.Count(), // TODO: Get actual count from repository
+                TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };

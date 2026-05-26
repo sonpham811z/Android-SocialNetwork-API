@@ -14,6 +14,7 @@ namespace User.Domain.Interfaces
         Task<UserProfile> GetByEmailAsync(string email);
         Task<IEnumerable<UserProfile>> GetByUserIdsAsync(IEnumerable<Guid> userIds);
         Task<IEnumerable<UserProfile>> SearchByNameAsync(string searchTerm, int skip, int take);
+        Task<int> CountByNameAsync(string searchTerm);
         Task<UserProfile> CreateAsync(UserProfile profile);
         Task<UserProfile> UpdateAsync(UserProfile profile);
         Task<bool> DeleteAsync(Guid id);
