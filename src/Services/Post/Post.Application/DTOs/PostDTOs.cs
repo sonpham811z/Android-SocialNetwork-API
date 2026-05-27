@@ -66,6 +66,16 @@ namespace Post.Application.DTOs
         public DateTime? UpdatedAt { get; set; }
         public bool IsLikedByCurrentUser { get; set; }
         public List<CommentDto>? Comments { get; set; }
+
+        // Share reference
+        public Guid? OriginalPostId { get; set; }
+        public PostDto? OriginalPost { get; set; }
+    }
+
+    public class SharePostDto
+    {
+        public string Content { get; set; } = string.Empty;
+        public string Visibility { get; set; } = "Public";
     }
 
     public class CreateTextPostDto

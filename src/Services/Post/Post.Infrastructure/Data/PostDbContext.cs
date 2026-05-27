@@ -52,10 +52,12 @@ namespace Post.Infrastructure.Data
 
                 entity.Property(p => p.Visibility).IsRequired();
                 entity.Property(p => p.CreatedAt).IsRequired();
-                
+                entity.Property(p => p.OriginalPostId).IsRequired(false);
+
                 entity.HasIndex(p => p.UserId);
                 entity.HasIndex(p => p.CreatedAt);
                 entity.HasIndex(p => new { p.UserId, p.CreatedAt });
+                entity.HasIndex(p => p.OriginalPostId);
 
                 // Relationships
                 entity.HasMany(p => p.Comments)

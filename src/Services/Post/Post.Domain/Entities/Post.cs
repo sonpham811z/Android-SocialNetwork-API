@@ -32,7 +32,10 @@ namespace Post.Domain.Entities
         
         // Privacy
         public PostVisibility Visibility { get; private set; }
-        
+
+        // Share reference
+        public Guid? OriginalPostId { get; private set; }
+
         // Navigation properties
         private List<Comment> _comments = new List<Comment>();
         public IReadOnlyCollection<Comment> Comments => _comments.AsReadOnly();
@@ -121,6 +124,31 @@ namespace Post.Domain.Entities
             };
         }
         
+        public static Post CreateSharedPost(
+            Guid userId,
+            string content,
+            PostVisibility visibility,
+            Guid originalPostId)
+        {
+            if (content != null && content.Length > 5000)
+                throw new ArgumentException("Post content cannot exceed 5000 characters");
+
+            return new Post
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Content = content ?? string.Empty,
+                Type = PostType.Text,
+                Visibility = visibility,
+                OriginalPostId = originalPostId,
+                CreatedAt = DateTime.UtcNow,
+                LikesCount = 0,
+                CommentsCount = 0,
+                SharesCount = 0,
+                IsDeleted = false
+            };
+        }
+
         // Business logic methods
         public void UpdateContent(string newContent)
         {

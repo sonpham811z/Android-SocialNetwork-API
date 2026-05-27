@@ -14,6 +14,7 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<PostDto>> CreateTextPostAsync(Guid userId, CreateTextPostDto dto);
         Task<ApiResponse<PostDto>> CreateImagePostAsync(Guid userId, CreateImagePostDto dto, IFormFile image);
         Task<ApiResponse<PostDto>> CreateVoicePostAsync(Guid userId, CreateVoicePostDto dto, IFormFile audio);
+        Task<ApiResponse<PostDto>> SharePostAsync(Guid originalPostId, Guid userId, SharePostDto dto);
         Task<ApiResponse<PostDto>> UpdatePostAsync(Guid postId, Guid userId, UpdatePostDto dto);
         Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> LikePostAsync(Guid postId, Guid userId);

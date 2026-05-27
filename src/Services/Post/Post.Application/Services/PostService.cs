@@ -206,6 +206,41 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<PostDto>> SharePostAsync(Guid originalPostId, Guid userId, SharePostDto dto)
+        {
+            try
+            {
+                var originalPost = await _unitOfWork.Posts.GetByIdAsync(originalPostId);
+                if (originalPost == null || originalPost.IsDeleted)
+                    return ApiResponse<PostDto>.ErrorResponse("Bài viết gốc không tồn tại");
+
+                var visibility = Enum.Parse<PostVisibility>(dto.Visibility, true);
+                var sharedPost = Domain.Entities.Post.CreateSharedPost(
+                    userId, dto.Content ?? string.Empty, visibility, originalPostId);
+
+                await _unitOfWork.Posts.AddAsync(sharedPost);
+
+                // Tăng SharesCount của bài gốc
+                originalPost.IncrementShareCount();
+                await _unitOfWork.Posts.UpdateAsync(originalPost);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                // Publish event
+                await _messagePublisher.PublishPostCreatedAsync(sharedPost.Id, userId, sharedPost.Content);
+
+                // Cập nhật số bài viết của user
+                await _userProfileClient.UpdatePostsCountAsync(userId, 1);
+
+                var postDto = await MapToPostDtoAsync(sharedPost, userId);
+                return ApiResponse<PostDto>.SuccessResponse(postDto, "Đã chia sẻ bài viết thành công");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<PostDto>.ErrorResponse($"Lỗi khi chia sẻ bài viết: {ex.Message}");
+            }
+        }
+
         public async Task<ApiResponse<PostDto>> UpdatePostAsync(Guid postId, Guid userId, UpdatePostDto dto)
         {
             try
@@ -381,6 +416,44 @@ namespace Post.Application.Services
                 }
             }
 
+            // Nếu là bài share, load bài viết gốc (không đệ quy thêm)
+            PostDto? originalPostDto = null;
+            if (post.OriginalPostId.HasValue)
+            {
+                var originalPost = await _unitOfWork.Posts.GetByIdAsync(post.OriginalPostId.Value);
+                if (originalPost != null && !originalPost.IsDeleted)
+                {
+                    var origUser = await _userProfileClient.GetUserProfileAsync(originalPost.UserId);
+                    origUser ??= new UserProfileDto
+                    {
+                        Id = originalPost.UserId,
+                        Name = "Unknown User",
+                        UserName = "unknown",
+                        FullName = "Unknown User"
+                    };
+
+                    originalPostDto = new PostDto
+                    {
+                        Id = originalPost.Id,
+                        UserId = originalPost.UserId,
+                        User = origUser,
+                        Content = originalPost.Content,
+                        Type = originalPost.Type.ToString(),
+                        ImageUrl = originalPost.ImageUrl,
+                        AudioUrl = originalPost.AudioUrl,
+                        AudioDuration = originalPost.AudioDuration,
+                        Waveform = originalPost.Waveform,
+                        LikesCount = originalPost.LikesCount,
+                        CommentsCount = originalPost.CommentsCount,
+                        SharesCount = originalPost.SharesCount,
+                        Visibility = originalPost.Visibility.ToString(),
+                        CreatedAt = originalPost.CreatedAt,
+                        UpdatedAt = originalPost.UpdatedAt,
+                        IsLikedByCurrentUser = false
+                    };
+                }
+            }
+
             return new PostDto
             {
                 Id = post.Id,
@@ -399,7 +472,9 @@ namespace Post.Application.Services
                 CreatedAt = post.CreatedAt,
                 UpdatedAt = post.UpdatedAt,
                 IsLikedByCurrentUser = isLiked,
-                Comments = commentsDto.Any() ? commentsDto : null
+                Comments = commentsDto.Any() ? commentsDto : null,
+                OriginalPostId = post.OriginalPostId,
+                OriginalPost = originalPostDto
             };
         }
     }

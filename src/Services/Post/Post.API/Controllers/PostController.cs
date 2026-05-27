@@ -193,6 +193,30 @@ namespace Post.API.Controllers
         }
 
         /// <summary>
+        /// Share a post to feed
+        /// </summary>
+        [Authorize]
+        [HttpPost("{id:guid}/share")]
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> SharePost(Guid id, [FromBody] SharePostDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.SharePostAsync(id, userId, dto);
+
+            if (!result.Success)
+            {
+                if (result.Message.Contains("không tồn tại"))
+                    return NotFound(result);
+                return BadRequest(result);
+            }
+
+            return CreatedAtAction(nameof(GetPostById), new { id = result.Data.Id }, result);
+        }
+
+        /// <summary>
         /// Unlike a post
         /// </summary>
         [Authorize]

@@ -112,6 +112,9 @@ namespace Post.Infrastructure.Migrations
                     b.Property<int>("LikesCount")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("OriginalPostId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("SharesCount")
                         .HasColumnType("integer");
 
@@ -133,6 +136,8 @@ namespace Post.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("OriginalPostId");
 
                     b.HasIndex("UserId");
 
