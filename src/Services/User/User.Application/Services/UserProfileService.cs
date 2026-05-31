@@ -415,16 +415,13 @@ namespace User.Application.Services
                 return ApiResponse<PaginatedResponse<SearchResultDto>>.ErrorResponse("Search term is required");
             }
 
-            var skip = (pageNumber - 1) * pageSize;
-            var searchTask = _profileRepository.SearchByNameAsync(searchTerm, skip, pageSize);
-            var countTask  = _profileRepository.CountByNameAsync(searchTerm);
-            await Task.WhenAll(searchTask, countTask);
-            var profiles   = searchTask.Result;
-            var totalCount = countTask.Result;
+            var skip       = (pageNumber - 1) * pageSize;
+            var profiles   = await _profileRepository.SearchByNameAsync(searchTerm, skip, pageSize);
+            var totalCount = await _profileRepository.CountByNameAsync(searchTerm);
 
             var results = profiles.Select(p => new SearchResultDto
             {
-                Id = p.Id,
+                Id = p.UserId,   // Identity user ID — dùng để navigate và gọi API
                 Username = p.UserName,
                 FullName = p.GetFullName(),
                 ProfilePictureUrl = p.ProfilePictureUrl,

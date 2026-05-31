@@ -53,8 +53,16 @@ namespace Post.Application.Services
         {
             try
             {
-                var posts = await _unitOfWork.Posts.GetUserPostsAsync(userId, page, pageSize);
-                var totalCount = await _unitOfWork.Posts.GetUserPostsCountAsync(userId);
+                // Kiểm tra người xem có phải là bạn bè không
+                bool isFriend = false;
+                if (currentUserId.HasValue && currentUserId.Value != userId)
+                {
+                    var friendIds = await _userProfileClient.GetFriendIdsAsync(currentUserId.Value);
+                    isFriend = friendIds.Contains(userId);
+                }
+
+                var posts = await _unitOfWork.Posts.GetUserPostsAsync(userId, page, pageSize, currentUserId, isFriend);
+                var totalCount = await _unitOfWork.Posts.GetUserPostsCountAsync(userId, currentUserId, isFriend);
                 
                 var postDtos = new List<PostDto>();
                 foreach (var post in posts)

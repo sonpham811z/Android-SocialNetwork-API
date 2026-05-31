@@ -23,6 +23,7 @@ namespace Identity.Application.Services
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly IEventPublisher _eventPublisher;
+        private readonly IUserServiceClient _userServiceClient;
 
         // Constructor
         public AuthService (
@@ -35,7 +36,8 @@ namespace Identity.Application.Services
             IGoogleAuthService googleAuthService,
             IEmailService emailService,
             IConfiguration configuration,
-            IEventPublisher eventPublisher
+            IEventPublisher eventPublisher,
+            IUserServiceClient userServiceClient
         )
         {
             _userRepository = userRepository;
@@ -48,6 +50,7 @@ namespace Identity.Application.Services
             _emailService = emailService;
             _configuration = configuration;
             _eventPublisher = eventPublisher;
+            _userServiceClient = userServiceClient;
         }
         
         private async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userid, string ipAddress)
@@ -111,7 +114,12 @@ namespace Identity.Application.Services
                 LastName = user.LastName,
                 Gender = user.Gender,
                 DateOfBirth = user.DateOfBirth
-            }) ;
+            });
+
+            // Tạo profile trực tiếp (không qua RabbitMQ) để đảm bảo profile luôn tồn tại
+            _ = _userServiceClient.EnsureProfileCreatedAsync(
+                user.Id, user.Email, user.FirstName, user.LastName,
+                user.DateOfBirth, user.Gender);
 
 
             // Send email verification
@@ -218,6 +226,10 @@ namespace Identity.Application.Services
                         FirstName = user.FirstName,
                         LastName = user.LastName,
                     });
+
+                    _ = _userServiceClient.EnsureProfileCreatedAsync(
+                        user.Id, user.Email, user.FirstName, user.LastName,
+                        dateOfBirth: null, gender: null);
                 }
                 else
                 {

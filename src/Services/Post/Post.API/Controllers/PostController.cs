@@ -48,7 +48,11 @@ namespace Post.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _postService.GetUserPostsAsync(userId, page, pageSize);
+            Guid? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+                currentUserId = GetCurrentUserId();
+
+            var result = await _postService.GetUserPostsAsync(userId, page, pageSize, currentUserId);
             return Ok(result);
         }
 
@@ -239,7 +243,11 @@ namespace Post.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<CommentDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPostComments(Guid postId)
         {
-            var result = await _commentService.GetPostCommentsAsync(postId);
+            Guid? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+                currentUserId = GetCurrentUserId();
+
+            var result = await _commentService.GetPostCommentsAsync(postId, currentUserId);
             return Ok(result);
         }
 
@@ -292,6 +300,32 @@ namespace Post.API.Controllers
             var userId = GetCurrentUserId();
 
             var result = await _commentService.DeleteCommentAsync(commentId, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Like a comment
+        /// </summary>
+        [Authorize]
+        [HttpPost("comments/{commentId:guid}/like")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> LikeComment(Guid commentId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _commentService.LikeCommentAsync(commentId, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Unlike a comment
+        /// </summary>
+        [Authorize]
+        [HttpDelete("comments/{commentId:guid}/like")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UnlikeComment(Guid commentId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _commentService.UnlikeCommentAsync(commentId, userId);
             return Ok(result);
         }
 

@@ -14,8 +14,11 @@ namespace Post.Infrastructure.Data
         public DbSet<Domain.Entities.Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<StoryView> StoryViews { get; set; }
+        public DbSet<BoardPost> BoardPosts { get; set; }
+        public DbSet<BoardVote> BoardVotes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -84,19 +87,41 @@ namespace Post.Infrastructure.Data
                 entity.Property(c => c.UserId).IsRequired();
                 entity.Property(c => c.Content).IsRequired().HasMaxLength(2000);
                 entity.Property(c => c.CreatedAt).IsRequired();
+                entity.Property(c => c.LikesCount).IsRequired().HasDefaultValue(0);
 
                 entity.HasIndex(c => c.PostId);
                 entity.HasIndex(c => c.UserId);
                 entity.HasIndex(c => c.ParentCommentId);
 
-                // Self-referencing relationship for nested comments
                 entity.HasOne(c => c.ParentComment)
                     .WithMany()
                     .HasForeignKey(c => c.ParentCommentId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Query filters for soft delete
                 entity.HasQueryFilter(c => !c.IsDeleted);
+            });
+
+            // CommentLike Configuration
+            modelBuilder.Entity<CommentLike>(entity =>
+            {
+                entity.ToTable("CommentLikes");
+                entity.HasKey(l => l.Id);
+
+                entity.Property(l => l.CommentId).IsRequired();
+                entity.Property(l => l.UserId).IsRequired();
+                entity.Property(l => l.CreatedAt).IsRequired();
+
+                entity.HasIndex(l => new { l.CommentId, l.UserId })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false");
+                entity.HasIndex(l => l.UserId);
+
+                entity.HasOne(l => l.Comment)
+                    .WithMany()
+                    .HasForeignKey(l => l.CommentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(l => !l.IsDeleted);
             });
 
             // Story Configuration
@@ -138,6 +163,43 @@ namespace Post.Infrastructure.Data
 
                 entity.HasIndex(v => new { v.StoryId, v.ViewerId }).IsUnique();
                 entity.HasIndex(v => v.ViewerId);
+            });
+
+            // BoardPost Configuration
+            modelBuilder.Entity<BoardPost>(entity =>
+            {
+                entity.ToTable("BoardPosts");
+                entity.HasKey(b => b.Id);
+                entity.Property(b => b.Content).IsRequired().HasMaxLength(2000);
+                entity.Property(b => b.Tag).IsRequired();
+                entity.Property(b => b.IsAnonymous).IsRequired();
+                entity.Property(b => b.UpvotesCount).HasDefaultValue(0);
+                entity.Property(b => b.DownvotesCount).HasDefaultValue(0);
+                entity.Property(b => b.CommentsCount).HasDefaultValue(0);
+                entity.Property(b => b.CreatedAt).IsRequired();
+                entity.HasIndex(b => b.Tag);
+                entity.HasIndex(b => b.CreatedAt);
+                entity.HasIndex(b => b.AuthorId);
+                entity.HasQueryFilter(b => !b.IsDeleted);
+            });
+
+            // BoardVote Configuration
+            modelBuilder.Entity<BoardVote>(entity =>
+            {
+                entity.ToTable("BoardVotes");
+                entity.HasKey(v => v.Id);
+                entity.Property(v => v.BoardPostId).IsRequired();
+                entity.Property(v => v.UserId).IsRequired();
+                entity.Property(v => v.Type).IsRequired();
+                entity.Property(v => v.CreatedAt).IsRequired();
+                entity.HasIndex(v => new { v.BoardPostId, v.UserId })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false");
+                entity.HasOne(v => v.BoardPost)
+                    .WithMany()
+                    .HasForeignKey(v => v.BoardPostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasQueryFilter(v => !v.IsDeleted);
             });
 
             // PostLike Configuration

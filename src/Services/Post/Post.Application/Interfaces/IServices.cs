@@ -24,10 +24,21 @@ namespace Post.Application.Interfaces
     public interface ICommentService
     {
         Task<ApiResponse<CommentDto>> GetCommentByIdAsync(Guid commentId);
-        Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId);
+        Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId, Guid? currentUserId = null);
         Task<ApiResponse<CommentDto>> CreateCommentAsync(Guid postId, Guid userId, CreateCommentDto dto);
         Task<ApiResponse<CommentDto>> UpdateCommentAsync(Guid commentId, Guid userId, UpdateCommentDto dto);
         Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid userId);
+        Task<ApiResponse<bool>> LikeCommentAsync(Guid commentId, Guid userId);
+        Task<ApiResponse<bool>> UnlikeCommentAsync(Guid commentId, Guid userId);
+    }
+
+    public interface IBoardService
+    {
+        Task<ApiResponse<PaginatedResponse<BoardPostDto>>> GetPostsAsync(string? tag, string sort, int page, int pageSize, Guid? currentUserId);
+        Task<ApiResponse<BoardPostDto>> CreatePostAsync(Guid userId, CreateBoardPostDto dto);
+        Task<ApiResponse<bool>> VoteAsync(Guid postId, Guid userId, string voteType);
+        Task<ApiResponse<bool>> DeleteVoteAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
     }
 
     public interface IMediaService

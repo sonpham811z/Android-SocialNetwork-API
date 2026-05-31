@@ -58,6 +58,18 @@ namespace Post.Domain.Entities
             DeletedAt = DateTime.UtcNow;
         }
         
+        public int LikesCount { get; private set; }
+
+        public void IncrementLikesCount()
+        {
+            LikesCount++;
+        }
+
+        public void DecrementLikesCount()
+        {
+            if (LikesCount > 0) LikesCount--;
+        }
+
         public bool CanBeEditedBy(Guid userId) => UserId == userId && !IsDeleted;
         public bool CanBeDeletedBy(Guid userId) => UserId == userId && !IsDeleted;
     }

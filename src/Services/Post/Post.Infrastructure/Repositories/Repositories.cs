@@ -41,10 +41,21 @@ namespace Post.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<IEnumerable<Domain.Entities.Post>> GetUserPostsAsync(Guid userId, int page, int pageSize)
+        public async Task<IEnumerable<Domain.Entities.Post>> GetUserPostsAsync(
+            Guid userId, int page, int pageSize,
+            Guid? currentUserId = null, bool isFriend = false)
         {
-            return await _context.Posts
-                .Where(p => p.UserId == userId)
+            var query = _context.Posts.Where(p => p.UserId == userId);
+
+            // Owner thấy tất cả bài của mình
+            if (currentUserId != userId)
+            {
+                query = isFriend
+                    ? query.Where(p => p.Visibility == PostVisibility.Public || p.Visibility == PostVisibility.Friends)
+                    : query.Where(p => p.Visibility == PostVisibility.Public);
+            }
+
+            return await query
                 .OrderByDescending(p => p.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -127,11 +138,19 @@ namespace Post.Infrastructure.Repositories
             }
         }
 
-        public async Task<int> GetUserPostsCountAsync(Guid userId)
+        public async Task<int> GetUserPostsCountAsync(
+            Guid userId, Guid? currentUserId = null, bool isFriend = false)
         {
-            return await _context.Posts
-                .Where(p => p.UserId == userId)
-                .CountAsync();
+            var query = _context.Posts.Where(p => p.UserId == userId);
+
+            if (currentUserId != userId)
+            {
+                query = isFriend
+                    ? query.Where(p => p.Visibility == PostVisibility.Public || p.Visibility == PostVisibility.Friends)
+                    : query.Where(p => p.Visibility == PostVisibility.Public);
+            }
+
+            return await query.CountAsync();
         }
     }
 
@@ -240,6 +259,132 @@ namespace Post.Infrastructure.Repositories
             {
                 _context.PostLikes.Remove(like);
             }
+        }
+    }
+
+    public class CommentLikeRepository : ICommentLikeRepository
+    {
+        private readonly PostDbContext _context;
+
+        public CommentLikeRepository(PostDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<CommentLike?> GetByCommentAndUserAsync(Guid commentId, Guid userId)
+        {
+            return await _context.CommentLikes
+                .FirstOrDefaultAsync(l => l.CommentId == commentId && l.UserId == userId);
+        }
+
+        public async Task<CommentLike?> GetByCommentAndUserIncludingDeletedAsync(Guid commentId, Guid userId)
+        {
+            return await _context.CommentLikes
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(l => l.CommentId == commentId && l.UserId == userId);
+        }
+
+        public async Task<bool> HasUserLikedCommentAsync(Guid commentId, Guid userId)
+        {
+            return await _context.CommentLikes
+                .AnyAsync(l => l.CommentId == commentId && l.UserId == userId);
+        }
+
+        public async Task<CommentLike> AddAsync(CommentLike like)
+        {
+            await _context.CommentLikes.AddAsync(like);
+            return like;
+        }
+
+        public Task UpdateAsync(CommentLike like)
+        {
+            _context.CommentLikes.Update(like);
+            return Task.CompletedTask;
+        }
+    }
+
+    public class BoardRepository : IBoardRepository
+    {
+        private readonly PostDbContext _context;
+
+        public BoardRepository(PostDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IEnumerable<BoardPost>> GetPostsAsync(
+            BoardTag? tag, bool sortByHot, int page, int pageSize)
+        {
+            var query = _context.BoardPosts.Where(p => !p.IsDeleted);
+
+            if (tag.HasValue)
+                query = query.Where(p => p.Tag == tag.Value);
+
+            // Hot sort phải load vào memory vì HotScore dùng DateTime.UtcNow (không translate sang SQL)
+            if (sortByHot)
+            {
+                var all = await query.ToListAsync();
+                return all.OrderByDescending(p => p.HotScore)
+                          .Skip((page - 1) * pageSize)
+                          .Take(pageSize);
+            }
+
+            return await query
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountPostsAsync(BoardTag? tag)
+        {
+            var query = _context.BoardPosts.Where(p => !p.IsDeleted);
+            if (tag.HasValue)
+                query = query.Where(p => p.Tag == tag.Value);
+            return await query.CountAsync();
+        }
+
+        public async Task<BoardPost?> GetByIdAsync(Guid id)
+        {
+            return await _context.BoardPosts
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        }
+
+        public async Task<BoardPost> AddAsync(BoardPost post)
+        {
+            await _context.BoardPosts.AddAsync(post);
+            return post;
+        }
+
+        public Task UpdateAsync(BoardPost post)
+        {
+            _context.BoardPosts.Update(post);
+            return Task.CompletedTask;
+        }
+
+        public async Task<BoardVote?> GetVoteAsync(Guid boardPostId, Guid userId)
+        {
+            return await _context.BoardVotes
+                .FirstOrDefaultAsync(v => v.BoardPostId == boardPostId && v.UserId == userId && !v.IsDeleted);
+        }
+
+        public async Task<BoardVote?> GetVoteIncludingDeletedAsync(Guid boardPostId, Guid userId)
+        {
+            return await _context.BoardVotes
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(v => v.BoardPostId == boardPostId && v.UserId == userId);
+        }
+
+        public async Task<BoardVote> AddVoteAsync(BoardVote vote)
+        {
+            await _context.BoardVotes.AddAsync(vote);
+            return vote;
+        }
+
+        public Task UpdateVoteAsync(BoardVote vote)
+        {
+            _context.BoardVotes.Update(vote);
+            return Task.CompletedTask;
         }
     }
 }
