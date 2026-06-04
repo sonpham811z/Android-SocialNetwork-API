@@ -1,6 +1,7 @@
 using System.Text;
 using Message.Application.Interfaces;
 using Message.Application.Services;
+using Message.Application.Settings;
 using Message.Domain.Interfaces;
 using Message.Infrastructure.Data;
 using Message.Infrastructure.Hubs;
@@ -42,6 +43,10 @@ builder.Services.AddScoped<ISignalRMessageService, SignalRMessageService>();
 
 // Publisher is singleton because the RabbitMQ channel is reused across requests
 builder.Services.AddSingleton<IMessageEventPublisher, RabbitMQMessagePublisher>();
+
+// ── Agora Settings & Token Service ───────────────────────────────────────────
+builder.Services.Configure<AgoraSettings>(config.GetSection("Agora"));
+builder.Services.AddSingleton<IAgoraTokenService, AgoraTokenService>();
 
 // ── RabbitMQ Settings ─────────────────────────────────────────────────────────
 builder.Services.Configure<RabbitMQSettings>(config.GetSection("RabbitMQ"));

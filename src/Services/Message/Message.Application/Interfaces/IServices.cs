@@ -68,6 +68,12 @@ public interface ISignalRMessageService
     Task SendReadReceiptAsync(string conversationId, ReadReceiptEventDto receipt);
 }
 
+/// <summary>Generates Agora RTC tokens for voice/video calls.</summary>
+public interface IAgoraTokenService
+{
+    string GenerateRtcToken(string channelName, string uid, bool isPublisher);
+}
+
 // ── Domain events ─────────────────────────────────────────────────────────────
 
 /// <summary>
