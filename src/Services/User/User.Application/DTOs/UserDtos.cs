@@ -80,28 +80,32 @@ namespace User.Application.DTOs
     // Update Settings DTO
     public class UpdateSettingsDto
     {
-        public string Language { get; set; }
-        public string Theme { get; set; }
-        public PrivacySettingsDto PrivacySettings { get; set; }
-        public NotificationSettingsDto NotificationSettings { get; set; }
+        public string? Language { get; set; }
+        public string? Theme { get; set; }
+        public PrivacySettingsDto? PrivacySettings { get; set; }
+        public NotificationSettingsDto? NotificationSettings { get; set; }
     }
 
     public class PrivacySettingsDto
     {
-        public string ProfileVisibility { get; set; } // public, friends, onlyMe
-        public string WhoCanSeeEmail { get; set; }
-        public string WhoCanSeeFriends { get; set; }
-        public string WhoCanSendFriendRequest { get; set; }
+        public string ProfileVisibility { get; set; } = "public"; // public, friends, onlyMe
+        public string WhoCanSeeEmail { get; set; } = "friends";
+        public string WhoCanSeeFriends { get; set; } = "friends";
+        public string WhoCanSendFriendRequest { get; set; } = "everyone";
     }
 
     public class NotificationSettingsDto
     {
-        public bool EmailNotifications { get; set; }
-        public bool PushNotifications { get; set; }
-        public bool FriendRequests { get; set; }
-        public bool Comments { get; set; }
-        public bool Likes { get; set; }
-        public bool Mentions { get; set; }
+        public bool PushNotifications { get; set; } = true;
+        public bool EmailNotifications { get; set; } = false;
+        public bool SmsNotifications { get; set; } = false;
+        public bool Likes { get; set; } = true;
+        public bool Comments { get; set; } = true;
+        public bool Mentions { get; set; } = true;
+        public bool NewFollowers { get; set; } = false;
+        public bool FriendRequests { get; set; } = true;
+        public bool MessageRequests { get; set; } = true;
+        public bool DirectMessages { get; set; } = true;
     }
 
     // Response DTOs

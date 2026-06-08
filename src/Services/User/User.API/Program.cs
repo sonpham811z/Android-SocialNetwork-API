@@ -114,6 +114,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 builder.Services.AddHealthChecks()

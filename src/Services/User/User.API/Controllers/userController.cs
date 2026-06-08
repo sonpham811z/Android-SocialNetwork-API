@@ -15,10 +15,12 @@ namespace User.API.Controllers
     public class UserProfileController : ControllerBase
     {
         private readonly IUserProfileService _profileService;
+        private readonly IUserSettingsService _settingsService;
 
-        public UserProfileController(IUserProfileService profileService)
+        public UserProfileController(IUserProfileService profileService, IUserSettingsService settingsService)
         {
             _profileService = profileService;
+            _settingsService = settingsService;
         }
 
         // GET: api/userprofile/{id}
@@ -228,6 +230,41 @@ namespace User.API.Controllers
             var userId = GetCurrentUserId();
             var result = await _profileService.DeleteCoverPhotoAsync(userId);
             
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        // GET: api/userprofile/settings
+        [Authorize]
+        [HttpGet("settings")]
+        [ProducesResponseType(typeof(ApiResponse<UserSettingsDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetSettings()
+        {
+            var userId = GetCurrentUserId();
+            var result = await _settingsService.GetSettingsAsync(userId);
+
+            if (!result.Success)
+                return NotFound(result);
+
+            return Ok(result);
+        }
+
+        // PUT: api/userprofile/settings
+        [Authorize]
+        [HttpPut("settings")]
+        [ProducesResponseType(typeof(ApiResponse<UserSettingsDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userId = GetCurrentUserId();
+            var result = await _settingsService.UpdateSettingsAsync(userId, dto);
+
             if (!result.Success)
                 return BadRequest(result);
 
