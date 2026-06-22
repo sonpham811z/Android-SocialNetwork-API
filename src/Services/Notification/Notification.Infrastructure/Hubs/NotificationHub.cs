@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -57,7 +56,6 @@ namespace Notification.Infrastructure.Hubs
         private Guid GetUserId()
         {
             var raw = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? Context.User?.FindFirstValue(JwtRegisteredClaimNames.Sub)
                 ?? Context.User?.FindFirstValue("sub");
             return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
         }

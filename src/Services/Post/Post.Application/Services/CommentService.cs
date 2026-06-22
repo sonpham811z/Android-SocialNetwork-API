@@ -99,8 +99,8 @@ namespace Post.Application.Services
                 await _unitOfWork.Posts.UpdateAsync(post);
                 await _unitOfWork.SaveChangesAsync();
 
-                // Publish event
-                // await _messagePublisher.PublishCommentCreatedAsync(comment.Id, postId, userId, comment.Content);
+                // Publish event → Notification service tạo thông báo cho chủ bài viết
+                await _messagePublisher.PublishCommentCreatedAsync(comment.Id, postId, userId, comment.Content);
 
                 var commentDto = await MapToCommentDtoAsync(comment);
                 return ApiResponse<CommentDto>.SuccessResponse(commentDto, "Comment created successfully");

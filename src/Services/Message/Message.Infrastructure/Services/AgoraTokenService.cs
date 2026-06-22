@@ -109,7 +109,7 @@ public class AgoraTokenService : IAgoraTokenService
     private static byte[] ZLibCompress(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var zlib = new ZLibStream(output, CompressionLevel.BestCompression))
+        using (var zlib = new ZLibStream(output, CompressionLevel.SmallestSize))
             zlib.Write(data);
         return output.ToArray();
     }

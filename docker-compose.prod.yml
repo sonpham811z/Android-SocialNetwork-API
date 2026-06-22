@@ -46,3 +46,5 @@ services:
     environment:
       ConnectionStrings__MongoDB: ${MONGODB_CONNECTION}
       Jwt__Key: ${JWT_SECRET}
+      Agora__AppId: ${AGORA_APP_ID}
+      Agora__AppCertificate: ${AGORA_APP_CERTIFICATE}

@@ -61,7 +61,12 @@ builder.Services.AddHttpClient<IPostHttpClient, PostHttpClient>(client =>
 });
 
 // ── SignalR ───────────────────────────────────────────────────────────────────
-builder.Services.AddSignalR();
+// Serialize enums as their string names (e.g. "FriendRequestSent", "Read") so the
+// Flutter client can parse them — default System.Text.Json emits enums as numbers.
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options =>
+        options.PayloadSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -100,7 +105,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Emit enums as string names ("FriendRequestSent", "Read") instead of numbers,
+    // matching what the Flutter client expects when parsing NotificationDto.
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

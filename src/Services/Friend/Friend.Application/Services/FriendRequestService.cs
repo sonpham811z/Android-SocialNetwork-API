@@ -59,7 +59,7 @@ namespace Friend.Application.Services
                         await EnsureFriendshipAsync(senderId, receiverId);
                         await _unitOfWork.SaveChangesAsync();
 
-                        // await _publisher.PublishFriendRequestAcceptedAsync(existing.Id, existing.SenderId, existing.ReceiverId);
+                        await _publisher.PublishFriendRequestAcceptedAsync(existing.Id, existing.SenderId, existing.ReceiverId);
 
                         var autoDto = await MapRequestDtoAsync(existing);
                         return ApiResponse<FriendRequestDto>.SuccessResponse(autoDto, "Friend request automatically accepted.");
@@ -72,7 +72,7 @@ namespace Friend.Application.Services
                 await _unitOfWork.FriendRequests.AddAsync(request);
                 await _unitOfWork.SaveChangesAsync();
 
-                // await _publisher.PublishFriendRequestSentAsync(request.Id, senderId, receiverId);
+                await _publisher.PublishFriendRequestSentAsync(request.Id, senderId, receiverId);
 
                 var requestDto = await MapRequestDtoAsync(request);
                 return ApiResponse<FriendRequestDto>.SuccessResponse(requestDto, "Friend request sent.");
@@ -101,7 +101,7 @@ namespace Friend.Application.Services
                 await _unitOfWork.SaveChangesAsync();
 
 
-                // await _publisher.PublishFriendRequestAcceptedAsync(request.Id, request.SenderId, request.ReceiverId);
+                await _publisher.PublishFriendRequestAcceptedAsync(request.Id, request.SenderId, request.ReceiverId);
 
                 var dto = await MapRequestDtoAsync(request);
                 return ApiResponse<FriendRequestDto>.SuccessResponse(dto, "Friend request accepted.");

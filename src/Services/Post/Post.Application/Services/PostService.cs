@@ -344,6 +344,9 @@ namespace Post.Application.Services
                 post.IncrementLikesCount();
                 await _unitOfWork.SaveChangesAsync();
 
+                // Publish event → Notification service tạo thông báo cho chủ bài viết
+                await _messagePublisher.PublishPostLikedAsync(postId, userId);
+
                 return ApiResponse<bool>.SuccessResponse(true, "Post liked successfully");
             }
             catch (Exception ex)
