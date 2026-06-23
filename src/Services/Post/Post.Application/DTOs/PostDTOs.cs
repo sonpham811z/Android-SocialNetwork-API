@@ -58,6 +58,8 @@ namespace Post.Application.DTOs
         public string? AudioUrl { get; set; }
         public string? AudioDuration { get; set; }
         public List<double>? Waveform { get; set; }
+        public string? VideoUrl { get; set; }
+        public string? VideoThumbnailUrl { get; set; }
         public int LikesCount { get; set; }
         public int CommentsCount { get; set; }
         public int SharesCount { get; set; }
@@ -96,6 +98,13 @@ namespace Post.Application.DTOs
         public string Content { get; set; }
         public string Visibility { get; set; } = "Public";
         // Audio will be uploaded via IFormFile
+    }
+
+    public class CreateVideoPostDto
+    {
+        public string Content { get; set; }
+        public string Visibility { get; set; } = "Public";
+        // Video will be uploaded via IFormFile
     }
 
     public class UpdatePostDto

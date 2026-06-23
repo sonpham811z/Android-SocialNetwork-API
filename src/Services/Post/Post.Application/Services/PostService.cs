@@ -214,6 +214,36 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<PostDto>> CreateVideoPostAsync(
+            Guid userId, CreateVideoPostDto dto, IFormFile video)
+        {
+            try
+            {
+                // Upload video to Cloudinary and get an auto-generated thumbnail
+                var (videoUrl, publicId, thumbnailUrl, _) = await _mediaService.UploadVideoAsync(video, "posts/video");
+
+                var visibility = Enum.Parse<PostVisibility>(dto.Visibility, true);
+                var post = Domain.Entities.Post.CreateVideoPost(
+                    userId, dto.Content, videoUrl, publicId, thumbnailUrl, visibility);
+
+                await _unitOfWork.Posts.AddAsync(post);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Publish event
+                await _messagePublisher.PublishPostCreatedAsync(post.Id, userId, post.Content);
+
+                // Update user posts count
+                await _userProfileClient.UpdatePostsCountAsync(userId, 1);
+
+                var postDto = await MapToPostDtoAsync(post);
+                return ApiResponse<PostDto>.SuccessResponse(postDto, "Video post created successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<PostDto>.ErrorResponse($"Error creating video post: {ex.Message}");
+            }
+        }
+
         public async Task<ApiResponse<PostDto>> SharePostAsync(Guid originalPostId, Guid userId, SharePostDto dto)
         {
             try
@@ -299,6 +329,9 @@ namespace Post.Application.Services
                     
                 if (!string.IsNullOrEmpty(post.AudioPublicId))
                     await _mediaService.DeleteAudioAsync(post.AudioPublicId);
+
+                if (!string.IsNullOrEmpty(post.VideoPublicId))
+                    await _mediaService.DeleteVideoAsync(post.VideoPublicId);
 
                 post.SoftDelete();
                 await _unitOfWork.Posts.UpdateAsync(post);
@@ -454,6 +487,8 @@ namespace Post.Application.Services
                         AudioUrl = originalPost.AudioUrl,
                         AudioDuration = originalPost.AudioDuration,
                         Waveform = originalPost.Waveform,
+                        VideoUrl = originalPost.VideoUrl,
+                        VideoThumbnailUrl = originalPost.VideoThumbnailUrl,
                         LikesCount = originalPost.LikesCount,
                         CommentsCount = originalPost.CommentsCount,
                         SharesCount = originalPost.SharesCount,
@@ -476,6 +511,8 @@ namespace Post.Application.Services
                 AudioUrl = post.AudioUrl,
                 AudioDuration = post.AudioDuration,
                 Waveform = post.Waveform,
+                VideoUrl = post.VideoUrl,
+                VideoThumbnailUrl = post.VideoThumbnailUrl,
                 LikesCount = post.LikesCount,
                 CommentsCount = post.CommentsCount,
                 SharesCount = post.SharesCount,

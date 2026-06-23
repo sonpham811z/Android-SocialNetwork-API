@@ -140,6 +140,29 @@ namespace Post.API.Controllers
         }
 
         /// <summary>
+        /// Create a video post
+        /// </summary>
+        [Authorize]
+        [HttpPost("video")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateVideoPost([FromForm] CreateVideoPostDto dto, IFormFile video)
+        {
+            var userId = GetCurrentUserId();
+
+            if (dto.Content == null || video == null)
+                return BadRequest(ApiResponse<PostDto>.ErrorResponse("Media file is required"));
+
+            var result = await _postService.CreateVideoPostAsync(userId, dto, video);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return CreatedAtAction(nameof(GetPostById), new { id = result.Data.Id }, result);
+        }
+
+        /// <summary>
         /// Update a post
         /// </summary>
         [Authorize]

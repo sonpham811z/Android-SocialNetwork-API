@@ -39,6 +39,9 @@ namespace Post.Infrastructure.Data
                 entity.Property(p => p.AudioUrl).HasMaxLength(500);
                 entity.Property(p => p.AudioPublicId).HasMaxLength(200);
                 entity.Property(p => p.AudioDuration).HasMaxLength(20);
+                entity.Property(p => p.VideoUrl).HasMaxLength(500);
+                entity.Property(p => p.VideoPublicId).HasMaxLength(200);
+                entity.Property(p => p.VideoThumbnailUrl).HasMaxLength(500);
                 
                 // Store waveform as JSON
                 entity.Property(p => p.Waveform)

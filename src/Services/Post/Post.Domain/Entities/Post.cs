@@ -18,6 +18,9 @@ namespace Post.Domain.Entities
         public string? AudioPublicId { get; private set; }
         public string? AudioDuration { get; private set; }
         public List<double>? Waveform { get; private set; }
+        public string? VideoUrl { get; private set; }
+        public string? VideoPublicId { get; private set; }
+        public string? VideoThumbnailUrl { get; private set; }
         
         // Engagement
         public int LikesCount { get; private set; }
@@ -124,6 +127,36 @@ namespace Post.Domain.Entities
             };
         }
         
+        public static Post CreateVideoPost(
+            Guid userId,
+            string content,
+            string videoUrl,
+            string videoPublicId,
+            string? thumbnailUrl,
+            PostVisibility visibility = PostVisibility.Public)
+        {
+            ValidateContent(content);
+            if (string.IsNullOrWhiteSpace(videoUrl))
+                throw new ArgumentException("Video URL cannot be empty for video post");
+
+            return new Post
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Content = content,
+                Type = PostType.Video,
+                VideoUrl = videoUrl,
+                VideoPublicId = videoPublicId,
+                VideoThumbnailUrl = thumbnailUrl,
+                Visibility = visibility,
+                CreatedAt = DateTime.UtcNow,
+                LikesCount = 0,
+                CommentsCount = 0,
+                SharesCount = 0,
+                IsDeleted = false
+            };
+        }
+
         public static Post CreateSharedPost(
             Guid userId,
             string content,
@@ -232,7 +265,8 @@ namespace Post.Domain.Entities
     {
         Text = 0,
         Image = 1,
-        Voice = 2
+        Voice = 2,
+        Video = 3
     }
     
     public enum PostVisibility
