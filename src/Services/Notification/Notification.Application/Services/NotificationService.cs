@@ -12,6 +12,7 @@ namespace Notification.Application.Services
         private readonly IFcmService    _fcm;
         private readonly IOnlineTracker _tracker;
         private readonly IRealtimeService _realtime;
+        private readonly IUserSettingsHttpClient _userSettings;
         private readonly ILogger<NotificationService> _logger;
 
         private const string ReceiveNotification = "ReceiveNotification";
@@ -21,13 +22,15 @@ namespace Notification.Application.Services
             IFcmService                  fcm,
             IOnlineTracker               tracker,
             IRealtimeService             realtime,
+            IUserSettingsHttpClient      userSettings,
             ILogger<NotificationService> logger)
         {
-            _uow      = uow;
-            _fcm      = fcm;
-            _tracker  = tracker;
-            _realtime = realtime;
-            _logger   = logger;
+            _uow          = uow;
+            _fcm          = fcm;
+            _tracker      = tracker;
+            _realtime     = realtime;
+            _userSettings = userSettings;
+            _logger       = logger;
         }
 
         public async Task CreateAndSendAsync(
@@ -37,6 +40,17 @@ namespace Notification.Application.Services
             string           message,
             Guid?            referenceId = null)
         {
+            // Respect the recipient's notification preferences (synced from the settings screen).
+            // If the User service is unreachable, prefs is null → default to delivering.
+            var prefs = await _userSettings.GetNotificationPreferencesAsync(recipientId);
+            if (prefs != null && !IsTypeEnabled(type, prefs))
+            {
+                _logger.LogInformation(
+                    "Notification of type {Type} suppressed for user {UserId} by their settings",
+                    type, recipientId);
+                return;
+            }
+
             var notification = Domain.Entities.Notification.Create(
                 recipientId, actorId, type, message, referenceId);
 
@@ -60,8 +74,28 @@ namespace Notification.Application.Services
                 }
             }
 
+            // Offline push (FCM) is additionally gated by the master "push notifications" toggle.
+            if (prefs != null && !prefs.PushNotifications)
+            {
+                _logger.LogInformation(
+                    "FCM push skipped for offline user {UserId} (push notifications disabled)", recipientId);
+                return;
+            }
+
             await SendFcmAsync(recipientId, message, dto);
         }
+
+        /// <summary>Maps a notification type to its corresponding user preference toggle.</summary>
+        private static bool IsTypeEnabled(NotificationType type, NotificationPreferences prefs) => type switch
+        {
+            NotificationType.FriendRequestSent     => prefs.FriendRequests,
+            NotificationType.FriendRequestAccepted => prefs.FriendRequests,
+            NotificationType.UserFollowed          => prefs.NewFollowers,
+            NotificationType.PostLiked             => prefs.Likes,
+            NotificationType.CommentCreated        => prefs.Comments,
+            NotificationType.MessageReceived       => prefs.DirectMessages,
+            _                                      => true
+        };
 
         public async Task<PaginatedResponse<NotificationDto>> GetNotificationsAsync(
             Guid recipientId,

@@ -48,3 +48,6 @@ services:
       Jwt__Key: ${JWT_SECRET}
       Agora__AppId: ${AGORA_APP_ID}
       Agora__AppCertificate: ${AGORA_APP_CERTIFICATE}
+      Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
+      Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
+      Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}

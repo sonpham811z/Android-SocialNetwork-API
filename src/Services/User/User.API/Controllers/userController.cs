@@ -252,6 +252,23 @@ namespace User.API.Controllers
             return Ok(result);
         }
 
+        // GET: api/userprofile/settings/{userId}
+        // Internal service-to-service endpoint (e.g. Notification service reads a recipient's
+        // notification preferences before deciding whether to deliver a notification).
+        [AllowAnonymous]
+        [HttpGet("settings/{userId:guid}")]
+        [ProducesResponseType(typeof(ApiResponse<UserSettingsDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetSettingsByUserId(Guid userId)
+        {
+            var result = await _settingsService.GetSettingsAsync(userId);
+
+            if (!result.Success)
+                return NotFound(result);
+
+            return Ok(result);
+        }
+
         // PUT: api/userprofile/settings
         [Authorize]
         [HttpPut("settings")]

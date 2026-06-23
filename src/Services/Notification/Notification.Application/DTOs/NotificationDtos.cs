@@ -21,6 +21,23 @@ namespace Notification.Application.DTOs
         public string Platform { get; init; } = string.Empty;  // "android" | "ios" | "web"
     }
 
+    /// <summary>
+    /// A recipient's notification preferences, fetched from the User service.
+    /// Mirrors the toggles on the client's notification-settings screen.
+    /// Defaults are permissive so a missing/unreachable settings record never suppresses notifications.
+    /// </summary>
+    public class NotificationPreferences
+    {
+        public bool PushNotifications { get; init; } = true;   // master switch for FCM (offline push)
+        public bool Likes            { get; init; } = true;
+        public bool Comments         { get; init; } = true;
+        public bool Mentions         { get; init; } = true;
+        public bool NewFollowers     { get; init; } = true;
+        public bool FriendRequests   { get; init; } = true;
+        public bool MessageRequests  { get; init; } = true;
+        public bool DirectMessages   { get; init; } = true;
+    }
+
     public class PaginatedResponse<T>
     {
         public IEnumerable<T> Items       { get; init; } = [];

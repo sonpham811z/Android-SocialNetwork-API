@@ -16,10 +16,11 @@ public class ConversationDto
 
 public class LastMessageDto
 {
-    public string   MessageId { get; init; } = default!;
-    public Guid     SenderId  { get; init; }
-    public string   Content   { get; init; } = default!;
-    public DateTime Timestamp { get; init; }
+    public string      MessageId { get; init; } = default!;
+    public Guid        SenderId  { get; init; }
+    public string      Content   { get; init; } = default!;
+    public MessageType Type      { get; init; } = MessageType.Text;
+    public DateTime    Timestamp { get; init; }
 }
 
 public class CreateOneToOneConversationDto
@@ -66,6 +67,14 @@ public class SendMessageHubRequest
     public string      ConversationId { get; init; } = default!;
     public string      Content        { get; init; } = default!;
     public MessageType Type           { get; init; } = MessageType.Text;
+}
+
+/// <summary>Response payload for an uploaded chat media attachment (image).</summary>
+public class MediaUploadResponseDto
+{
+    /// <summary>Public Cloudinary URL — used as the <see cref="MessageDto.Content"/> of an Image message.</summary>
+    public string Url      { get; init; } = default!;
+    public string PublicId { get; init; } = default!;
 }
 
 /// <summary>

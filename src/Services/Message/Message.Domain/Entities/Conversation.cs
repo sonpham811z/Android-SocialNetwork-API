@@ -65,5 +65,10 @@ public class LastMessageInfo
     public string   MessageId { get; set; } = default!;
     public Guid     SenderId  { get; set; }
     public string   Content   { get; set; } = default!;
+
+    /// <summary>Message kind (Text/Image/…) so the conversation list can render a proper preview.</summary>
+    [BsonRepresentation(BsonType.String)]
+    public MessageType Type   { get; set; } = MessageType.Text;
+
     public DateTime Timestamp { get; set; }
 }

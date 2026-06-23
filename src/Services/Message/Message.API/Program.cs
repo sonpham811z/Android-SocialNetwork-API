@@ -44,6 +44,9 @@ builder.Services.AddScoped<ISignalRMessageService, SignalRMessageService>();
 // Publisher is singleton because the RabbitMQ channel is reused across requests
 builder.Services.AddSingleton<IMessageEventPublisher, RabbitMQMessagePublisher>();
 
+// Cloudinary media uploads (chat image attachments)
+builder.Services.AddScoped<IMediaService, MediaService>();
+
 // ── Agora Settings & Token Service ───────────────────────────────────────────
 builder.Services.Configure<AgoraSettings>(config.GetSection("Agora"));
 builder.Services.AddSingleton<IAgoraTokenService, AgoraTokenService>();

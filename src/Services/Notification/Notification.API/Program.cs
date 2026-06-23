@@ -60,6 +60,13 @@ builder.Services.AddHttpClient<IPostHttpClient, PostHttpClient>(client =>
                                  ?? "http://localhost:5003");
 });
 
+builder.Services.AddHttpClient<IUserSettingsHttpClient, UserSettingsHttpClient>(client =>
+{
+    client.BaseAddress = new Uri(config["Services:UserServiceUrl"]
+                                 ?? "http://localhost:5220");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 // ── SignalR ───────────────────────────────────────────────────────────────────
 // Serialize enums as their string names (e.g. "FriendRequestSent", "Read") so the
 // Flutter client can parse them — default System.Text.Json emits enums as numbers.
