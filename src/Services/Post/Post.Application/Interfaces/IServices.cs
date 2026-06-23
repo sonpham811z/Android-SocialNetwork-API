@@ -17,6 +17,7 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<PostDto>> CreateVideoPostAsync(Guid userId, CreateVideoPostDto dto, IFormFile video);
         Task<ApiResponse<PostDto>> SharePostAsync(Guid originalPostId, Guid userId, SharePostDto dto);
         Task<ApiResponse<PostDto>> UpdatePostAsync(Guid postId, Guid userId, UpdatePostDto dto);
+        Task<ApiResponse<PostDto>> UpdatePostMediaAsync(Guid postId, Guid userId, string action, string? mediaType, IFormFile? file);
         Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> LikePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> UnlikePostAsync(Guid postId, Guid userId);

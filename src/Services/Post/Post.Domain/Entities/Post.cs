@@ -189,6 +189,64 @@ namespace Post.Domain.Entities
             Content = newContent;
             UpdatedAt = DateTime.UtcNow;
         }
+
+        // ── Media editing ─────────────────────────────────────────────────────
+        private void ClearAllMedia()
+        {
+            ImageUrl = null;
+            ImagePublicId = null;
+            AudioUrl = null;
+            AudioPublicId = null;
+            AudioDuration = null;
+            Waveform = null;
+            VideoUrl = null;
+            VideoPublicId = null;
+            VideoThumbnailUrl = null;
+        }
+
+        /// <summary>Gỡ toàn bộ media, chuyển bài về dạng Text.</summary>
+        public void RemoveMedia()
+        {
+            ClearAllMedia();
+            Type = PostType.Text;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetImageMedia(string imageUrl, string imagePublicId)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                throw new ArgumentException("Image URL cannot be empty for image post");
+            ClearAllMedia();
+            Type = PostType.Image;
+            ImageUrl = imageUrl;
+            ImagePublicId = imagePublicId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetVideoMedia(string videoUrl, string videoPublicId, string? thumbnailUrl)
+        {
+            if (string.IsNullOrWhiteSpace(videoUrl))
+                throw new ArgumentException("Video URL cannot be empty for video post");
+            ClearAllMedia();
+            Type = PostType.Video;
+            VideoUrl = videoUrl;
+            VideoPublicId = videoPublicId;
+            VideoThumbnailUrl = thumbnailUrl;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetVoiceMedia(string audioUrl, string audioPublicId, string audioDuration, List<double> waveform)
+        {
+            if (string.IsNullOrWhiteSpace(audioUrl))
+                throw new ArgumentException("Audio URL cannot be empty for voice post");
+            ClearAllMedia();
+            Type = PostType.Voice;
+            AudioUrl = audioUrl;
+            AudioPublicId = audioPublicId;
+            AudioDuration = audioDuration;
+            Waveform = waveform;
+            UpdatedAt = DateTime.UtcNow;
+        }
         
         public void AddComment(Comment comment)
         {

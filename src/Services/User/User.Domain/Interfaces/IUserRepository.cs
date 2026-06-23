@@ -10,6 +10,8 @@ namespace User.Domain.Interfaces
     {
         Task<UserProfile> GetByIdAsync(Guid id);
         Task<UserProfile> GetByUserIdAsync(Guid userId);
+        /// <summary>Lấy hồ sơ theo UserId kể cả khi đã xóa mềm (bỏ qua query filter).</summary>
+        Task<UserProfile?> GetByUserIdIncludingDeletedAsync(Guid userId);
         Task<UserProfile> GetByUsernameAsync(string username);
         Task<UserProfile> GetByEmailAsync(string email);
         Task<IEnumerable<UserProfile>> GetByUserIdsAsync(IEnumerable<Guid> userIds);

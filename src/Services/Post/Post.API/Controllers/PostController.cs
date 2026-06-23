@@ -187,6 +187,36 @@ namespace Post.API.Controllers
         }
 
         /// <summary>
+        /// Update a post's media (replace with a new image/video/voice, or remove media).
+        /// action = "remove" | "replace"; mediaType = "image" | "video" | "voice" (when replacing).
+        /// </summary>
+        [Authorize]
+        [HttpPut("{id:guid}/media")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdatePostMedia(
+            Guid id,
+            [FromForm] string action,
+            [FromForm] string? mediaType,
+            IFormFile? file)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.UpdatePostMediaAsync(id, userId, action, mediaType, file);
+
+            if (!result.Success)
+            {
+                if (result.Message.Contains("not found"))
+                    return NotFound(result);
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Delete a post (soft delete)
         /// </summary>
         [Authorize]

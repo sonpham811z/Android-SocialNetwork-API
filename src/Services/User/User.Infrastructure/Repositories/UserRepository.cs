@@ -39,6 +39,14 @@ namespace User.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.UserId == userId && !p.IsDeleted);
         }
 
+        public async Task<UserProfile?> GetByUserIdIncludingDeletedAsync(Guid userId)
+        {
+            return await _context.UserProfiles
+                .IgnoreQueryFilters()
+                .Include(p => p.Settings)
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+        }
+
         public async Task<UserProfile> GetByUsernameAsync(string userName)
         {
             return await _context.UserProfiles

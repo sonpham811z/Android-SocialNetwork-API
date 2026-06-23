@@ -94,11 +94,27 @@ namespace User.Application.Services
 
             try
             {
-                // Check xem profile đã tồn tại chưa (tránh duplicate)
-                var existingProfile = await _profileRepository.GetByUserIdAsync(userId);
+                // Check xem profile đã tồn tại chưa (kể cả đã xóa mềm, tránh trùng UserId)
+                var existingProfile = await _profileRepository.GetByUserIdIncludingDeletedAsync(userId);
                 if (existingProfile != null)
                 {
-                    Console.WriteLine("Profile is already exists");
+                    // Nếu hồ sơ trước đó đã bị xóa mềm → khôi phục lại (reactivate)
+                    if (existingProfile.IsDeleted)
+                    {
+                        existingProfile.IsDeleted = false;
+                        existingProfile.Email = email;
+                        existingProfile.FirstName = firstName;
+                        existingProfile.LastName = lastName;
+                        existingProfile.DateOfBirth = dateOfBirth;
+                        existingProfile.Gender = gender;
+                        existingProfile.UpdatedAt = DateTime.UtcNow;
+                        await _profileRepository.UpdateAsync(existingProfile);
+                        Console.WriteLine("Reactivated soft-deleted profile");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Profile is already exists");
+                    }
                     return;
                 }
 
@@ -395,12 +411,27 @@ namespace User.Application.Services
                 return ApiResponse<bool>.ErrorResponse("Profile not found");
             }
 
-            var result = await _profileRepository.DeleteAsync(profile.Id);
-            
-            if (!result)
+            // Xóa mềm: chỉ đánh dấu IsDeleted, giữ lại dữ liệu trong DB
+            if (profile.IsDeleted)
+            {
+                return ApiResponse<bool>.SuccessResponse(true, "Profile already deleted");
+            }
+
+            profile.IsDeleted = true;
+            profile.UpdatedAt = DateTime.UtcNow;
+            var result = await _profileRepository.UpdateAsync(profile);
+
+            if (result == null)
             {
                 return ApiResponse<bool>.ErrorResponse("Failed to delete profile");
             }
+
+            // Ghi log hoạt động
+            await LogSystemActivityAsync(
+                profile.Id,
+                ActivityType.ProfileUpdated,
+                "Account soft-deleted by user"
+            );
 
             return ApiResponse<bool>.SuccessResponse(true, "Profile deleted successfully");
         }

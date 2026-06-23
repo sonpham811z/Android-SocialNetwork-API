@@ -311,6 +311,71 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<PostDto>> UpdatePostMediaAsync(
+            Guid postId, Guid userId, string action, string? mediaType, IFormFile? file)
+        {
+            try
+            {
+                var post = await _unitOfWork.Posts.GetByIdAsync(postId);
+
+                if (post == null || post.IsDeleted)
+                    return ApiResponse<PostDto>.ErrorResponse("Post not found");
+
+                if (!post.CanBeEditedBy(userId))
+                    return ApiResponse<PostDto>.ErrorResponse("You don't have permission to edit this post");
+
+                var normalizedAction = (action ?? string.Empty).Trim().ToLowerInvariant();
+                if (normalizedAction != "remove" && normalizedAction != "replace")
+                    return ApiResponse<PostDto>.ErrorResponse("Invalid action. Use 'remove' or 'replace'.");
+
+                // Xóa media cũ trên Cloudinary (nếu có) trước khi thay/gỡ
+                if (!string.IsNullOrEmpty(post.ImagePublicId))
+                    await _mediaService.DeleteImageAsync(post.ImagePublicId);
+                if (!string.IsNullOrEmpty(post.AudioPublicId))
+                    await _mediaService.DeleteAudioAsync(post.AudioPublicId);
+                if (!string.IsNullOrEmpty(post.VideoPublicId))
+                    await _mediaService.DeleteVideoAsync(post.VideoPublicId);
+
+                if (normalizedAction == "remove")
+                {
+                    post.RemoveMedia();
+                }
+                else // replace
+                {
+                    if (file == null || file.Length == 0)
+                        return ApiResponse<PostDto>.ErrorResponse("Media file is required for replace action");
+
+                    switch ((mediaType ?? string.Empty).Trim().ToLowerInvariant())
+                    {
+                        case "image":
+                            var (imageUrl, imageId) = await _mediaService.UploadImageAsync(file);
+                            post.SetImageMedia(imageUrl, imageId);
+                            break;
+                        case "video":
+                            var (videoUrl, videoId, thumbUrl, _) = await _mediaService.UploadVideoAsync(file, "posts/video");
+                            post.SetVideoMedia(videoUrl, videoId, thumbUrl);
+                            break;
+                        case "voice":
+                            var (audioUrl, audioId, duration, waveform) = await _mediaService.UploadAudioAsync(file);
+                            post.SetVoiceMedia(audioUrl, audioId, duration, waveform);
+                            break;
+                        default:
+                            return ApiResponse<PostDto>.ErrorResponse("Invalid mediaType. Use 'image', 'video' or 'voice'.");
+                    }
+                }
+
+                await _unitOfWork.Posts.UpdateAsync(post);
+                await _unitOfWork.SaveChangesAsync();
+
+                var postDto = await MapToPostDtoAsync(post, userId);
+                return ApiResponse<PostDto>.SuccessResponse(postDto, "Post media updated successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<PostDto>.ErrorResponse($"Error updating post media: {ex.Message}");
+            }
+        }
+
         public async Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId)
         {
             try
