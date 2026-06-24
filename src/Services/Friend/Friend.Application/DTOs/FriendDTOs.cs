@@ -98,6 +98,14 @@ namespace Friend.Application.DTOs
         public DateTime CreatedAt { get; set; }
     }
 
+    // ─── Friend suggestion ─────────────────────────────────────────────────────
+
+    public class FriendSuggestionDto
+    {
+        public UserProfileDto User { get; set; } = null!;
+        public int MutualFriendsCount { get; set; }
+    }
+
     // ─── Social summary ────────────────────────────────────────────────────────
 
     public class UserSocialSummaryDto

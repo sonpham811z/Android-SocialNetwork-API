@@ -310,6 +310,47 @@ namespace Identity.Application.Services
             return ApiResponse<bool>.SuccessResponse(true, "Email verified successfully");
         }
 
+        public async Task<ApiResponse<bool>> ResendVerificationEmailAsync(ResendVerificationDto dto)
+        {
+            var user = await _userRepository.GetByEmailAsync(dto.Email);
+
+            // Don't reveal whether the email exists
+            if (user == null)
+            {
+                return ApiResponse<bool>.SuccessResponse(true, "If the email exists, a verification link has been sent");
+            }
+
+            if (user.IsEmailConfirmed)
+            {
+                return ApiResponse<bool>.ErrorResponse("Email is already verified");
+            }
+
+            // Issue a fresh verification token (old ones simply expire / stay unused)
+            var verificationToken = new EmailVerificationToken
+            {
+                UserId = user.Id,
+                Token = Guid.NewGuid().ToString(),
+                ExpiresAt = DateTime.UtcNow.AddDays(1),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _emailVerificationRepository.CreateAsync(verificationToken);
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendVerificationEmailAsync(user.Email, verificationToken.Token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi gửi email ngầm: {ex.Message}");
+                }
+            });
+
+            return ApiResponse<bool>.SuccessResponse(true, "If the email exists, a verification link has been sent");
+        }
+
         public async Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordDto dto)
         {
             var user = await _userRepository.GetByEmailAsync(dto.Email);

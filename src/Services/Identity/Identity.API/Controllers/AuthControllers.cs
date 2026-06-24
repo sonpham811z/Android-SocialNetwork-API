@@ -146,6 +146,22 @@ namespace Identity.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("resend-verification")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.ResendVerificationEmailAsync(dto);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [HttpGet("/verify-email")]
         [ApiExplorerSettings(IgnoreApi = true)] // Ẩn cái này khỏi Swagger cho gọn, vì nó dành cho Web Browser
         public async Task<IActionResult> VerifyEmailFromBrowser([FromQuery] string token)

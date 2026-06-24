@@ -123,5 +123,67 @@ namespace Friend.Application.Services
                 return ApiResponse<UserSocialSummaryDto>.ErrorResponse($"Error retrieving social summary: {ex.Message}");
             }
         }
+
+        public async Task<ApiResponse<List<FriendSuggestionDto>>> GetSuggestionsAsync(Guid userId, int limit)
+        {
+            try
+            {
+                if (limit <= 0) limit = 10;
+
+                var myFriendIds = await _unitOfWork.Friendships.GetFriendIdsAsync(userId);
+
+                // People we should never suggest: self, existing friends,
+                // anyone with a pending request, and anyone blocked (either direction).
+                var exclude = new HashSet<Guid>(myFriendIds) { userId };
+                foreach (var id in await _unitOfWork.FriendRequests.GetPendingPartnerIdsAsync(userId))
+                    exclude.Add(id);
+                foreach (var id in await _unitOfWork.Blocks.GetBlockRelatedUserIdsAsync(userId))
+                    exclude.Add(id);
+
+                // Friends-of-friends: a candidate's score = how many of my friends they are friends with.
+                var mutualCounts = new Dictionary<Guid, int>();
+                if (myFriendIds.Count > 0)
+                {
+                    var friendSet = new HashSet<Guid>(myFriendIds);
+                    var edges = await _unitOfWork.Friendships.GetFriendshipsForUsersAsync(myFriendIds);
+
+                    foreach (var edge in edges)
+                    {
+                        if (friendSet.Contains(edge.UserId1) && !exclude.Contains(edge.UserId2))
+                            mutualCounts[edge.UserId2] = mutualCounts.GetValueOrDefault(edge.UserId2) + 1;
+                        if (friendSet.Contains(edge.UserId2) && !exclude.Contains(edge.UserId1))
+                            mutualCounts[edge.UserId1] = mutualCounts.GetValueOrDefault(edge.UserId1) + 1;
+                    }
+                }
+
+                var topCandidates = mutualCounts
+                    .OrderByDescending(kv => kv.Value)
+                    .Take(limit)
+                    .ToList();
+
+                if (topCandidates.Count == 0)
+                    return ApiResponse<List<FriendSuggestionDto>>.SuccessResponse(new List<FriendSuggestionDto>());
+
+                var profiles = await _userClient.GetUserProfilesAsync(topCandidates.Select(c => c.Key).ToList());
+
+                var suggestions = topCandidates
+                    .Select(c =>
+                    {
+                        var profile = profiles.FirstOrDefault(p => p.UserId == c.Key);
+                        return profile == null
+                            ? null
+                            : new FriendSuggestionDto { User = profile, MutualFriendsCount = c.Value };
+                    })
+                    .Where(s => s != null)
+                    .Select(s => s!)
+                    .ToList();
+
+                return ApiResponse<List<FriendSuggestionDto>>.SuccessResponse(suggestions);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<FriendSuggestionDto>>.ErrorResponse($"Error retrieving suggestions: {ex.Message}");
+            }
+        }
     }
 }

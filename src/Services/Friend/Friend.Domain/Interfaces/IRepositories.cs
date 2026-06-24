@@ -17,6 +17,9 @@ namespace Friend.Domain.Interfaces
         /// <summary>Returns all friend Ids of a user (used for feed construction in Post service).</summary>
         Task<List<Guid>> GetFriendIdsAsync(Guid userId);
 
+        /// <summary>Returns all active friendships where either side is one of the given user Ids (used for friend suggestions / friends-of-friends).</summary>
+        Task<List<Friendship>> GetFriendshipsForUsersAsync(IEnumerable<Guid> userIds);
+
         Task<Friendship> AddAsync(Friendship friendship);
         Task UpdateAsync(Friendship friendship);
     }
@@ -33,6 +36,9 @@ namespace Friend.Domain.Interfaces
         Task<int> GetSentRequestsCountAsync(Guid senderId);
         Task<int> GetReceivedRequestsCountAsync(Guid receiverId);
         Task<int> GetPendingReceivedCountAsync(Guid userId);
+
+        /// <summary>Returns the user Ids of everyone who has a pending request with this user (either direction).</summary>
+        Task<List<Guid>> GetPendingPartnerIdsAsync(Guid userId);
 
         Task<FriendRequest> AddAsync(FriendRequest request);
         Task UpdateAsync(FriendRequest request);
@@ -62,6 +68,9 @@ namespace Friend.Domain.Interfaces
 
         /// <summary>True if either direction of block exists between the two users.</summary>
         Task<bool> IsBlockedAsync(Guid userA, Guid userB);
+
+        /// <summary>Returns the user Ids of everyone involved in a block with this user (either direction).</summary>
+        Task<List<Guid>> GetBlockRelatedUserIdsAsync(Guid userId);
 
         Task<Block> AddAsync(Block block);
         Task UpdateAsync(Block block);

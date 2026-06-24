@@ -51,3 +51,12 @@ services:
       Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
       Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
       Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
+
+  notification:
+    image: ghcr.io/${IMAGE_OWNER}/socialnet-notification:${IMAGE_TAG:-latest}
+    environment:
+      ConnectionStrings__DefaultConnection: ${DB_CONNECTION}
+      # Notification service reads the JWT signing key from "Jwt:Key" (like Message)
+      Jwt__Key: ${JWT_SECRET}
+      # Firebase__CredentialsPath + the volume mount are inherited from docker-compose.yml.
+      # Make sure ./secrets/fcm-service-account.json exists on the VM (see DEPLOYMENT guide).
