@@ -174,7 +174,129 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<List<BoardCommentDto>>> GetCommentsAsync(Guid boardPostId, Guid? currentUserId)
+        {
+            try
+            {
+                var comments = (await _unitOfWork.Board.GetCommentsAsync(boardPostId)).ToList();
+
+                // Batch fetch profiles for non-anonymous authors
+                var authorIds = comments
+                    .Where(c => !c.IsAnonymous)
+                    .Select(c => c.AuthorId)
+                    .Distinct()
+                    .ToList();
+
+                var profiles = authorIds.Count > 0
+                    ? await _userProfileClient.GetUserProfilesAsync(authorIds)
+                    : new List<UserProfileDto>();
+
+                var dtos = comments
+                    .Select(c => MapCommentToDto(c, profiles, currentUserId))
+                    .ToList();
+
+                return ApiResponse<List<BoardCommentDto>>.SuccessResponse(dtos);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<BoardCommentDto>>.ErrorResponse($"Error: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<BoardCommentDto>> AddCommentAsync(Guid boardPostId, Guid userId, CreateBoardCommentDto dto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.Content))
+                    return ApiResponse<BoardCommentDto>.ErrorResponse("Content is required");
+
+                var post = await _unitOfWork.Board.GetByIdAsync(boardPostId);
+                if (post == null || post.IsDeleted)
+                    return ApiResponse<BoardCommentDto>.ErrorResponse("Post not found");
+
+                var comment = BoardComment.Create(boardPostId, userId, dto.Content, dto.IsAnonymous);
+                await _unitOfWork.Board.AddCommentAsync(comment);
+
+                post.IncrementComments();
+                await _unitOfWork.Board.UpdateAsync(post);
+                await _unitOfWork.SaveChangesAsync();
+
+                List<UserProfileDto> profiles = new();
+                if (!comment.IsAnonymous)
+                {
+                    var profile = await _userProfileClient.GetUserProfileAsync(userId);
+                    if (profile != null) profiles.Add(profile);
+                }
+
+                var result = MapCommentToDto(comment, profiles, userId);
+                return ApiResponse<BoardCommentDto>.SuccessResponse(result, "Comment created");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<BoardCommentDto>.ErrorResponse($"Error: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid userId)
+        {
+            try
+            {
+                var comment = await _unitOfWork.Board.GetCommentByIdAsync(commentId);
+                if (comment == null || comment.IsDeleted)
+                    return ApiResponse<bool>.ErrorResponse("Comment not found");
+
+                if (!comment.CanBeDeletedBy(userId))
+                    return ApiResponse<bool>.ErrorResponse("No permission to delete this comment");
+
+                comment.SoftDelete();
+                await _unitOfWork.Board.UpdateCommentAsync(comment);
+
+                var post = await _unitOfWork.Board.GetByIdAsync(comment.BoardPostId);
+                if (post != null)
+                {
+                    post.DecrementComments();
+                    await _unitOfWork.Board.UpdateAsync(post);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                return ApiResponse<bool>.SuccessResponse(true, "Comment deleted");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error: {ex.Message}");
+            }
+        }
+
         // ── Helpers ──────────────────────────────────────────────────────────
+
+        private BoardCommentDto MapCommentToDto(BoardComment comment, List<UserProfileDto> profiles, Guid? currentUserId)
+        {
+            string? authorName = null;
+            string? authorAvatar = null;
+            string? authorId = null;
+
+            if (!comment.IsAnonymous)
+            {
+                var profile = profiles.FirstOrDefault(p => p.UserId == comment.AuthorId || p.Id == comment.AuthorId);
+                authorName = profile?.Name ?? "Unknown";
+                authorAvatar = profile?.ProfilePictureUrl;
+                authorId = comment.AuthorId.ToString();
+            }
+
+            return new BoardCommentDto
+            {
+                Id = comment.Id,
+                BoardPostId = comment.BoardPostId,
+                IsAnonymous = comment.IsAnonymous,
+                AuthorId = authorId,
+                AuthorName = authorName,
+                AuthorAvatar = authorAvatar,
+                Content = comment.Content,
+                CreatedAt = comment.CreatedAt,
+                TimeAgo = FormatTimeAgo(comment.CreatedAt),
+                IsMine = currentUserId.HasValue && currentUserId.Value == comment.AuthorId
+            };
+        }
 
         private static void ApplyVote(BoardPost post, VoteType type, int delta)
         {

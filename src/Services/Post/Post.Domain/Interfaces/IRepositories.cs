@@ -83,6 +83,11 @@ namespace Post.Domain.Interfaces
         Task<BoardVote?> GetVoteIncludingDeletedAsync(Guid boardPostId, Guid userId);
         Task<BoardVote> AddVoteAsync(BoardVote vote);
         Task UpdateVoteAsync(BoardVote vote);
+
+        Task<BoardComment> AddCommentAsync(BoardComment comment);
+        Task<IEnumerable<BoardComment>> GetCommentsAsync(Guid boardPostId);
+        Task<BoardComment?> GetCommentByIdAsync(Guid commentId);
+        Task UpdateCommentAsync(BoardComment comment);
     }
 
     public interface IUnitOfWork : IDisposable

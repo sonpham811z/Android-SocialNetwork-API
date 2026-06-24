@@ -20,6 +20,7 @@ namespace Post.Infrastructure.Data
         public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<BoardPost> BoardPosts { get; set; }
         public DbSet<BoardVote> BoardVotes { get; set; }
+        public DbSet<BoardComment> BoardComments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -204,6 +205,25 @@ namespace Post.Infrastructure.Data
                     .HasForeignKey(v => v.BoardPostId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasQueryFilter(v => !v.IsDeleted);
+            });
+
+            // BoardComment Configuration
+            modelBuilder.Entity<BoardComment>(entity =>
+            {
+                entity.ToTable("BoardComments");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.BoardPostId).IsRequired();
+                entity.Property(c => c.AuthorId).IsRequired();
+                entity.Property(c => c.Content).IsRequired().HasMaxLength(1000);
+                entity.Property(c => c.IsAnonymous).IsRequired();
+                entity.Property(c => c.CreatedAt).IsRequired();
+                entity.HasIndex(c => c.BoardPostId);
+                entity.HasIndex(c => c.AuthorId);
+                entity.HasOne(c => c.BoardPost)
+                    .WithMany()
+                    .HasForeignKey(c => c.BoardPostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasQueryFilter(c => !c.IsDeleted);
             });
 
             // PostLike Configuration

@@ -427,5 +427,31 @@ namespace Post.Infrastructure.Repositories
             _context.BoardVotes.Update(vote);
             return Task.CompletedTask;
         }
+
+        public async Task<BoardComment> AddCommentAsync(BoardComment comment)
+        {
+            await _context.BoardComments.AddAsync(comment);
+            return comment;
+        }
+
+        public async Task<IEnumerable<BoardComment>> GetCommentsAsync(Guid boardPostId)
+        {
+            return await _context.BoardComments
+                .Where(c => c.BoardPostId == boardPostId)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<BoardComment?> GetCommentByIdAsync(Guid commentId)
+        {
+            return await _context.BoardComments
+                .FirstOrDefaultAsync(c => c.Id == commentId);
+        }
+
+        public Task UpdateCommentAsync(BoardComment comment)
+        {
+            _context.BoardComments.Update(comment);
+            return Task.CompletedTask;
+        }
     }
 }

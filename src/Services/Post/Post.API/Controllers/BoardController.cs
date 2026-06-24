@@ -78,6 +78,40 @@ namespace Post.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>GET /api/board/{id}/comments — danh sách bình luận</summary>
+        [HttpGet("{id:guid}/comments")]
+        public async Task<IActionResult> GetComments(Guid id)
+        {
+            Guid? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+                currentUserId = GetCurrentUserId();
+
+            var result = await _boardService.GetCommentsAsync(id, currentUserId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>POST /api/board/{id}/comments — thêm bình luận</summary>
+        [Authorize]
+        [HttpPost("{id:guid}/comments")]
+        public async Task<IActionResult> AddComment(Guid id, [FromBody] CreateBoardCommentDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _boardService.AddCommentAsync(id, userId, dto);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+
+        /// <summary>DELETE /api/board/comments/{commentId} — xóa bình luận của mình</summary>
+        [Authorize]
+        [HttpDelete("comments/{commentId:guid}")]
+        public async Task<IActionResult> DeleteComment(Guid commentId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _boardService.DeleteCommentAsync(commentId, userId);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
+        }
+
         private Guid GetCurrentUserId()
         {
             var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)

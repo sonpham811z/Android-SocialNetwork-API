@@ -43,6 +43,9 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<bool>> VoteAsync(Guid postId, Guid userId, string voteType);
         Task<ApiResponse<bool>> DeleteVoteAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<List<BoardCommentDto>>> GetCommentsAsync(Guid boardPostId, Guid? currentUserId);
+        Task<ApiResponse<BoardCommentDto>> AddCommentAsync(Guid boardPostId, Guid userId, CreateBoardCommentDto dto);
+        Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid userId);
     }
 
     public interface IMediaService

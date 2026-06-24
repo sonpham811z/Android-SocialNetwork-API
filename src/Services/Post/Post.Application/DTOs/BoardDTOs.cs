@@ -32,4 +32,24 @@ namespace Post.Application.DTOs
     {
         public string VoteType { get; set; }  // "up" | "down"
     }
+
+    public class BoardCommentDto
+    {
+        public Guid Id { get; set; }
+        public Guid BoardPostId { get; set; }
+        public bool IsAnonymous { get; set; }
+        public string? AuthorId { get; set; }      // null khi ẩn danh
+        public string? AuthorName { get; set; }
+        public string? AuthorAvatar { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string TimeAgo { get; set; }
+        public bool IsMine { get; set; }            // người dùng hiện tại có thể xóa
+    }
+
+    public class CreateBoardCommentDto
+    {
+        public string Content { get; set; }
+        public bool IsAnonymous { get; set; } = true;
+    }
 }
