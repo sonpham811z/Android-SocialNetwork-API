@@ -479,6 +479,56 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<bool>> SavePostAsync(Guid postId, Guid userId)
+        {
+            try
+            {
+                var post = await _unitOfWork.Posts.GetByIdAsync(postId);
+                if (post == null || post.IsDeleted)
+                    return ApiResponse<bool>.ErrorResponse("Post not found");
+
+                var existing = await _unitOfWork.SavedPosts.GetByPostAndUserIncludingDeletedAsync(postId, userId);
+                if (existing != null && !existing.IsDeleted)
+                    return ApiResponse<bool>.SuccessResponse(true, "Post already saved");
+
+                if (existing != null)
+                {
+                    existing.Restore();
+                }
+                else
+                {
+                    var saved = SavedPost.Create(postId, userId);
+                    await _unitOfWork.SavedPosts.AddAsync(saved);
+                }
+                await _unitOfWork.SaveChangesAsync();
+
+                return ApiResponse<bool>.SuccessResponse(true, "Post saved successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error saving post: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<bool>> UnsavePostAsync(Guid postId, Guid userId)
+        {
+            try
+            {
+                var existing = await _unitOfWork.SavedPosts.GetByPostAndUserAsync(postId, userId);
+                if (existing == null)
+                    return ApiResponse<bool>.ErrorResponse("You have not saved this post");
+
+                existing.SoftDelete();
+                await _unitOfWork.SaveChangesAsync();
+
+                return ApiResponse<bool>.SuccessResponse(true, "Post unsaved successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error unsaving post: {ex.Message}");
+            }
+        }
+
         // Helper methods
         private async Task<PostDto> MapToPostDtoAsync(Domain.Entities.Post post, Guid? currentUserId = null)
         {
@@ -497,9 +547,11 @@ namespace Post.Application.Services
             }
             
             bool isLiked = false;
+            bool isSaved = false;
             if (currentUserId.HasValue)
             {
                 isLiked = await _unitOfWork.PostLikes.HasUserLikedPostAsync(post.Id, currentUserId.Value);
+                isSaved = await _unitOfWork.SavedPosts.HasUserSavedPostAsync(post.Id, currentUserId.Value);
             }
 
             var commentsDto = new List<CommentDto>();
@@ -585,6 +637,7 @@ namespace Post.Application.Services
                 CreatedAt = post.CreatedAt,
                 UpdatedAt = post.UpdatedAt,
                 IsLikedByCurrentUser = isLiked,
+                IsSavedByCurrentUser = isSaved,
                 Comments = commentsDto.Any() ? commentsDto : null,
                 OriginalPostId = post.OriginalPostId,
                 OriginalPost = originalPostDto

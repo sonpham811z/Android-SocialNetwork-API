@@ -16,6 +16,7 @@ namespace Post.Infrastructure.Repositories
         public ICommentRepository Comments { get; }
         public IPostLikeRepository PostLikes { get; }
         public ICommentLikeRepository CommentLikes { get; }
+        public ISavedPostRepository SavedPosts { get; }
         public IStoryRepository Stories { get; }
         public IBoardRepository Board { get; }
 
@@ -26,6 +27,7 @@ namespace Post.Infrastructure.Repositories
             Comments = new CommentRepository(_context);
             PostLikes = new PostLikeRepository(_context);
             CommentLikes = new CommentLikeRepository(_context);
+            SavedPosts = new SavedPostRepository(_context);
             Stories = new StoryRepository(_context);
             Board = new BoardRepository(_context);
         }

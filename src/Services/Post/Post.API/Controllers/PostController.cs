@@ -287,6 +287,34 @@ namespace Post.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Save (bookmark) a post
+        /// </summary>
+        [Authorize]
+        [HttpPost("{id:guid}/save")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SavePost(Guid id)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.SavePostAsync(id, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Unsave (remove bookmark from) a post
+        /// </summary>
+        [Authorize]
+        [HttpDelete("{id:guid}/save")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UnsavePost(Guid id)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.UnsavePostAsync(id, userId);
+            return Ok(result);
+        }
+
         // ==================== COMMENT ENDPOINTS ====================
 
         /// <summary>

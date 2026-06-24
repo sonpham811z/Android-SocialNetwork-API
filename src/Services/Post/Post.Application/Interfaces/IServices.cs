@@ -21,6 +21,8 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> LikePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> UnlikePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> SavePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> UnsavePostAsync(Guid postId, Guid userId);
     }
 
     public interface ICommentService

@@ -15,6 +15,7 @@ namespace Post.Infrastructure.Data
         public DbSet<Comment> Comments { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
         public DbSet<CommentLike> CommentLikes { get; set; }
+        public DbSet<SavedPost> SavedPosts { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<BoardPost> BoardPosts { get; set; }
@@ -223,6 +224,30 @@ namespace Post.Infrastructure.Data
 
                 // Query filters for soft delete
                 entity.HasQueryFilter(l => !l.IsDeleted);
+            });
+
+            // SavedPost (bookmark) Configuration
+            modelBuilder.Entity<SavedPost>(entity =>
+            {
+                entity.ToTable("SavedPosts");
+                entity.HasKey(s => s.Id);
+
+                entity.Property(s => s.PostId).IsRequired();
+                entity.Property(s => s.UserId).IsRequired();
+                entity.Property(s => s.CreatedAt).IsRequired();
+
+                // Partial unique index: allow re-save after un-save (soft delete)
+                entity.HasIndex(s => new { s.PostId, s.UserId })
+                    .IsUnique()
+                    .HasFilter("\"IsDeleted\" = false");
+                entity.HasIndex(s => s.UserId);
+
+                entity.HasOne(s => s.Post)
+                    .WithMany()
+                    .HasForeignKey(s => s.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(s => !s.IsDeleted);
             });
         }
     }

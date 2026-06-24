@@ -67,6 +67,7 @@ namespace Post.Application.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsLikedByCurrentUser { get; set; }
+        public bool IsSavedByCurrentUser { get; set; }
         public List<CommentDto>? Comments { get; set; }
 
         // Share reference

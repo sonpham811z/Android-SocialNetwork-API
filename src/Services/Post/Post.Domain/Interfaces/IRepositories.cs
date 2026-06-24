@@ -51,6 +51,15 @@ namespace Post.Domain.Interfaces
         Task UpdateAsync(CommentLike like);
     }
 
+    public interface ISavedPostRepository
+    {
+        Task<SavedPost?> GetByPostAndUserAsync(Guid postId, Guid userId);
+        Task<SavedPost?> GetByPostAndUserIncludingDeletedAsync(Guid postId, Guid userId);
+        Task<bool> HasUserSavedPostAsync(Guid postId, Guid userId);
+        Task<SavedPost> AddAsync(SavedPost saved);
+        Task UpdateAsync(SavedPost saved);
+    }
+
     public interface IStoryRepository
     {
         Task<Entities.Story?> GetByIdAsync(Guid id);
@@ -82,6 +91,7 @@ namespace Post.Domain.Interfaces
         ICommentRepository Comments { get; }
         IPostLikeRepository PostLikes { get; }
         ICommentLikeRepository CommentLikes { get; }
+        ISavedPostRepository SavedPosts { get; }
         IStoryRepository Stories { get; }
         IBoardRepository Board { get; }
         Task<int> SaveChangesAsync();

@@ -262,6 +262,47 @@ namespace Post.Infrastructure.Repositories
         }
     }
 
+    public class SavedPostRepository : ISavedPostRepository
+    {
+        private readonly PostDbContext _context;
+
+        public SavedPostRepository(PostDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<SavedPost?> GetByPostAndUserAsync(Guid postId, Guid userId)
+        {
+            return await _context.SavedPosts
+                .FirstOrDefaultAsync(s => s.PostId == postId && s.UserId == userId);
+        }
+
+        public async Task<SavedPost?> GetByPostAndUserIncludingDeletedAsync(Guid postId, Guid userId)
+        {
+            return await _context.SavedPosts
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.PostId == postId && s.UserId == userId);
+        }
+
+        public async Task<bool> HasUserSavedPostAsync(Guid postId, Guid userId)
+        {
+            return await _context.SavedPosts
+                .AnyAsync(s => s.PostId == postId && s.UserId == userId);
+        }
+
+        public async Task<SavedPost> AddAsync(SavedPost saved)
+        {
+            await _context.SavedPosts.AddAsync(saved);
+            return saved;
+        }
+
+        public Task UpdateAsync(SavedPost saved)
+        {
+            _context.SavedPosts.Update(saved);
+            return Task.CompletedTask;
+        }
+    }
+
     public class CommentLikeRepository : ICommentLikeRepository
     {
         private readonly PostDbContext _context;
