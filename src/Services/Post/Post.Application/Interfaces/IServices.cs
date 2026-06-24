@@ -23,6 +23,7 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<bool>> UnlikePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> SavePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> UnsavePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<PaginatedResponse<PostDto>>> GetSavedPostsAsync(Guid userId, int page, int pageSize);
     }
 
     public interface ICommentService

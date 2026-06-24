@@ -315,6 +315,22 @@ namespace Post.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Get the current user's saved (bookmarked) posts, newest-saved first.
+        /// </summary>
+        [Authorize]
+        [HttpGet("saved")]
+        [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<PostDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSavedPosts(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.GetSavedPostsAsync(userId, page, pageSize);
+            return Ok(result);
+        }
+
         // ==================== COMMENT ENDPOINTS ====================
 
         /// <summary>

@@ -529,6 +529,39 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<PaginatedResponse<PostDto>>> GetSavedPostsAsync(Guid userId, int page, int pageSize)
+        {
+            try
+            {
+                var posts = await _unitOfWork.SavedPosts.GetSavedPostsByUserAsync(userId, page, pageSize);
+                var totalCount = await _unitOfWork.SavedPosts.CountSavedByUserAsync(userId);
+
+                var postDtos = new List<PostDto>();
+                foreach (var post in posts)
+                {
+                    var dto = await MapToPostDtoAsync(post, userId);
+                    postDtos.Add(dto);
+                }
+
+                var response = new PaginatedResponse<PostDto>
+                {
+                    Items = postDtos,
+                    TotalItems = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    HasNextPage = page * pageSize < totalCount,
+                    HasPreviousPage = page > 1
+                };
+
+                return ApiResponse<PaginatedResponse<PostDto>>.SuccessResponse(response);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<PaginatedResponse<PostDto>>.ErrorResponse($"Error retrieving saved posts: {ex.Message}");
+            }
+        }
+
         // Helper methods
         private async Task<PostDto> MapToPostDtoAsync(Domain.Entities.Post post, Guid? currentUserId = null)
         {

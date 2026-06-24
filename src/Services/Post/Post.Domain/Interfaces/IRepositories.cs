@@ -58,6 +58,10 @@ namespace Post.Domain.Interfaces
         Task<bool> HasUserSavedPostAsync(Guid postId, Guid userId);
         Task<SavedPost> AddAsync(SavedPost saved);
         Task UpdateAsync(SavedPost saved);
+
+        /// <summary>Posts a user has saved, newest-saved first, excluding deleted posts.</summary>
+        Task<IEnumerable<Entities.Post>> GetSavedPostsByUserAsync(Guid userId, int page, int pageSize);
+        Task<int> CountSavedByUserAsync(Guid userId);
     }
 
     public interface IStoryRepository

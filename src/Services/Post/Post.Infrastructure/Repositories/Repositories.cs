@@ -301,6 +301,28 @@ namespace Post.Infrastructure.Repositories
             _context.SavedPosts.Update(saved);
             return Task.CompletedTask;
         }
+
+        public async Task<IEnumerable<Post.Domain.Entities.Post>> GetSavedPostsByUserAsync(Guid userId, int page, int pageSize)
+        {
+            // Join saved bookmarks (newest first) with their posts; the Post query filter
+            // automatically excludes soft-deleted posts.
+            return await _context.SavedPosts
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.CreatedAt)
+                .Include(s => s.Post)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => s.Post)
+                .Where(p => p != null)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountSavedByUserAsync(Guid userId)
+        {
+            return await _context.SavedPosts
+                .Where(s => s.UserId == userId)
+                .CountAsync(s => s.Post != null);
+        }
     }
 
     public class CommentLikeRepository : ICommentLikeRepository
