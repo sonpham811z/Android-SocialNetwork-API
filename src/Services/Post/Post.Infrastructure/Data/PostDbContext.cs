@@ -16,6 +16,7 @@ namespace Post.Infrastructure.Data
         public DbSet<PostLike> PostLikes { get; set; }
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<SavedPost> SavedPosts { get; set; }
+        public DbSet<PostReport> PostReports { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<BoardPost> BoardPosts { get; set; }
@@ -60,6 +61,7 @@ namespace Post.Infrastructure.Data
 
                 entity.Property(p => p.Visibility).IsRequired();
                 entity.Property(p => p.CreatedAt).IsRequired();
+                entity.Property(p => p.IsHidden).HasDefaultValue(false);
                 entity.Property(p => p.OriginalPostId).IsRequired(false);
 
                 entity.HasIndex(p => p.UserId);
@@ -78,8 +80,24 @@ namespace Post.Infrastructure.Data
                     .HasForeignKey(l => l.PostId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // Query filters for soft delete
-                entity.HasQueryFilter(p => !p.IsDeleted);
+                // Query filters: ẩn bài đã xoá (chủ post) hoặc bị admin ẩn
+                entity.HasQueryFilter(p => !p.IsDeleted && !p.IsHidden);
+            });
+
+            // PostReport Configuration
+            modelBuilder.Entity<PostReport>(entity =>
+            {
+                entity.ToTable("PostReports");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.PostId).IsRequired();
+                entity.Property(r => r.ReporterId).IsRequired();
+                entity.Property(r => r.Reason).IsRequired().HasMaxLength(500);
+                entity.Property(r => r.Status).IsRequired();
+                entity.Property(r => r.CreatedAt).IsRequired();
+                entity.HasIndex(r => r.PostId);
+                entity.HasIndex(r => r.Status);
+                // Mỗi user chỉ 1 report đang chờ cho 1 bài (chặn spam report)
+                entity.HasIndex(r => new { r.PostId, r.ReporterId, r.Status });
             });
 
             // Comment Configuration

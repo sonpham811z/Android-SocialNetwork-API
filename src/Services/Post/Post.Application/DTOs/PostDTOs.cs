@@ -81,6 +81,32 @@ namespace Post.Application.DTOs
         public string Visibility { get; set; } = "Public";
     }
 
+    // ── Report / moderation ──────────────────────────────────────────────────
+    public class CreateReportDto
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class ReportDto
+    {
+        public Guid     Id          { get; set; }
+        public Guid     PostId      { get; set; }
+        public string   Reason      { get; set; } = string.Empty;
+        public string   Status      { get; set; } = string.Empty;
+        public DateTime CreatedAt   { get; set; }
+        public Guid     ReporterId  { get; set; }
+        public string?  ReporterName { get; set; }
+
+        // Snapshot bài bị báo cáo
+        public string   PostContent   { get; set; } = string.Empty;
+        public string   PostType      { get; set; } = string.Empty;
+        public string?  PostImageUrl  { get; set; }
+        public Guid     PostOwnerId   { get; set; }
+        public string?  PostOwnerName { get; set; }
+        public bool     PostIsHidden  { get; set; }
+        public bool     PostIsDeleted { get; set; }
+    }
+
     public class CreateTextPostDto
     {
         public string Content { get; set; }

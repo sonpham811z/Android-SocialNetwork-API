@@ -331,6 +331,72 @@ namespace Post.API.Controllers
             return Ok(result);
         }
 
+        // ==================== REPORT / MODERATION ENDPOINTS ====================
+
+        /// <summary>Report a post (any authenticated user).</summary>
+        [Authorize]
+        [HttpPost("{id:guid}/report")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ReportPost(Guid id, [FromBody] CreateReportDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _postService.ReportPostAsync(id, userId, dto.Reason);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>[Admin] List reports. status = pending | dismissed | actiontaken (default: all).</summary>
+        [Authorize]
+        [HttpGet("reports")]
+        public async Task<IActionResult> GetReports(
+            [FromQuery] string? status = "pending",
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            if (!IsAdmin()) return Forbidden();
+
+            var result = await _postService.GetReportsAsync(status, page, pageSize);
+            return Ok(result);
+        }
+
+        /// <summary>[Admin] Hide a reported post.</summary>
+        [Authorize]
+        [HttpPost("{id:guid}/hide")]
+        public async Task<IActionResult> HidePost(Guid id)
+        {
+            if (!IsAdmin()) return Forbidden();
+
+            var result = await _postService.HidePostAsync(id, GetCurrentUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>[Admin] Restore a hidden post.</summary>
+        [Authorize]
+        [HttpDelete("{id:guid}/hide")]
+        public async Task<IActionResult> UnhidePost(Guid id)
+        {
+            if (!IsAdmin()) return Forbidden();
+
+            var result = await _postService.UnhidePostAsync(id, GetCurrentUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>[Admin] Dismiss a report (no violation).</summary>
+        [Authorize]
+        [HttpPut("reports/{reportId:guid}/dismiss")]
+        public async Task<IActionResult> DismissReport(Guid reportId)
+        {
+            if (!IsAdmin()) return Forbidden();
+
+            var result = await _postService.DismissReportAsync(reportId, GetCurrentUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        private bool IsAdmin() => User.FindFirstValue("isAdmin") == "true";
+
+        private IActionResult Forbidden() =>
+            StatusCode(StatusCodes.Status403Forbidden,
+                ApiResponse<bool>.ErrorResponse("Bạn không có quyền quản trị"));
+
         // ==================== COMMENT ENDPOINTS ====================
 
         /// <summary>

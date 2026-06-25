@@ -16,13 +16,16 @@ namespace Notification.API.Controllers
     {
         private readonly INotificationService _notificationService;
         private readonly IUnitOfWork          _uow;
+        private readonly IOnlineTracker       _onlineTracker;
 
         public NotificationController(
             INotificationService notificationService,
-            IUnitOfWork          uow)
+            IUnitOfWork          uow,
+            IOnlineTracker       onlineTracker)
         {
             _notificationService = notificationService;
             _uow                 = uow;
+            _onlineTracker       = onlineTracker;
         }
 
         /// <summary>Get paginated notifications for the current user.</summary>
@@ -61,6 +64,22 @@ namespace Notification.API.Controllers
             var userId = GetCurrentUserId();
             await _notificationService.MarkAllAsReadAsync(userId);
             return Ok(ApiResponse<object>.Ok(null!, "All notifications marked as read"));
+        }
+
+        // ── Presence ──────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Returns which of the supplied user Ids are currently online (connected via SignalR).
+        /// </summary>
+        [HttpPost("presence")]
+        public IActionResult GetPresence([FromBody] PresenceQueryDto dto)
+        {
+            var online = (dto.UserIds ?? new List<Guid>())
+                .Distinct()
+                .Where(id => _onlineTracker.IsOnline(id))
+                .ToList();
+
+            return Ok(ApiResponse<List<Guid>>.Ok(online));
         }
 
         // ── Device Token ────────────────────────────────────────────────────────

@@ -138,6 +138,22 @@ namespace Post.Infrastructure.Repositories
             }
         }
 
+        public async Task<Domain.Entities.Post?> GetByIdIgnoringFiltersAsync(Guid id)
+        {
+            return await _context.Posts
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<List<Domain.Entities.Post>> GetByIdsIgnoringFiltersAsync(List<Guid> ids)
+        {
+            if (ids.Count == 0) return new List<Domain.Entities.Post>();
+            return await _context.Posts
+                .IgnoreQueryFilters()
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync();
+        }
+
         public async Task<int> GetUserPostsCountAsync(
             Guid userId, Guid? currentUserId = null, bool isFriend = false)
         {
@@ -259,6 +275,69 @@ namespace Post.Infrastructure.Repositories
             {
                 _context.PostLikes.Remove(like);
             }
+        }
+    }
+
+    public class ReportRepository : IReportRepository
+    {
+        private readonly PostDbContext _context;
+
+        public ReportRepository(PostDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<PostReport?> GetPendingByPostAndReporterAsync(Guid postId, Guid reporterId)
+        {
+            return await _context.PostReports.FirstOrDefaultAsync(r =>
+                r.PostId == postId &&
+                r.ReporterId == reporterId &&
+                r.Status == ReportStatus.Pending);
+        }
+
+        public async Task<PostReport?> GetByIdAsync(Guid id)
+        {
+            return await _context.PostReports.FirstOrDefaultAsync(r => r.Id == id);
+        }
+
+        public async Task<PostReport> AddAsync(PostReport report)
+        {
+            await _context.PostReports.AddAsync(report);
+            return report;
+        }
+
+        public Task UpdateAsync(PostReport report)
+        {
+            _context.PostReports.Update(report);
+            return Task.CompletedTask;
+        }
+
+        public async Task<List<PostReport>> GetReportsAsync(ReportStatus? status, int page, int pageSize)
+        {
+            var query = _context.PostReports.AsQueryable();
+            if (status.HasValue)
+                query = query.Where(r => r.Status == status.Value);
+
+            return await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountReportsAsync(ReportStatus? status)
+        {
+            var query = _context.PostReports.AsQueryable();
+            if (status.HasValue)
+                query = query.Where(r => r.Status == status.Value);
+            return await query.CountAsync();
+        }
+
+        public async Task<List<PostReport>> GetPendingByPostAsync(Guid postId)
+        {
+            return await _context.PostReports
+                .Where(r => r.PostId == postId && r.Status == ReportStatus.Pending)
+                .ToListAsync();
         }
     }
 

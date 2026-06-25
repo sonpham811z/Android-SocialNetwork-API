@@ -82,6 +82,7 @@ namespace Identity.Application.Services
                 Gender = user.Gender,
                 IsEmailConfirmed = user.IsEmailConfirmed,
                 FirstLogin = user.FirstLogin,
+                IsAdmin = user.IsAdmin,
                 CreatedAt = user.CreatedAt
             };
         }
