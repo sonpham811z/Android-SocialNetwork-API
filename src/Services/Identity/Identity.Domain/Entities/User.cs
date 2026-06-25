@@ -22,6 +22,10 @@ namespace Identity.Domain.Entities
         public bool IsEmailConfirmed { get; set; }
         public bool IsActive { get; set; }
 
+        // True cho tới khi người dùng xem xong phần giới thiệu (onboarding) lần đầu.
+        // Lưu trên DB để không phụ thuộc bộ nhớ thiết bị (cold boot máy ảo vẫn giữ đúng trạng thái).
+        public bool FirstLogin { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
@@ -33,6 +37,7 @@ namespace Identity.Domain.Entities
             CreatedAt = DateTime.UtcNow; // Luôn dùng UtcNow
             IsActive = true;
             IsEmailConfirmed = false;
+            FirstLogin = true;
             RefreshTokens = new List<RefreshToken>();
         }
     }

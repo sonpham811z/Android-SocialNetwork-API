@@ -81,6 +81,7 @@ namespace Identity.Application.Services
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender,
                 IsEmailConfirmed = user.IsEmailConfirmed,
+                FirstLogin = user.FirstLogin,
                 CreatedAt = user.CreatedAt
             };
         }
@@ -349,6 +350,30 @@ namespace Identity.Application.Services
             });
 
             return ApiResponse<bool>.SuccessResponse(true, "If the email exists, a verification link has been sent");
+        }
+
+        public async Task<ApiResponse<UserDto>> GetCurrentUserAsync(Guid userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return ApiResponse<UserDto>.ErrorResponse("User not found");
+
+            return ApiResponse<UserDto>.SuccessResponse(MapToUserDto(user));
+        }
+
+        public async Task<ApiResponse<bool>> CompleteIntroAsync(Guid userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return ApiResponse<bool>.ErrorResponse("User not found");
+
+            if (user.FirstLogin)
+            {
+                user.FirstLogin = false;
+                await _userRepository.UpdateAsync(user);
+            }
+
+            return ApiResponse<bool>.SuccessResponse(true, "Intro completed");
         }
 
         public async Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordDto dto)
