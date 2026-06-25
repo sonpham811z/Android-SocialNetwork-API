@@ -68,6 +68,14 @@ public class Program
             );
             builder.Services.AddSingleton<IEventPublisher, RabbitMQEventPublisher>();
 
+            // HTTP client gọi User service để tạo profile sau khi register
+            var userServiceUrl = builder.Configuration["UserService:BaseUrl"] ?? "http://localhost:5220";
+            builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(userServiceUrl);
+                client.Timeout = TimeSpan.FromSeconds(5);
+            });
+
             // Dependency Injection (Đăng ký Service)
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();

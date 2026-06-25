@@ -69,6 +69,7 @@ public class MessageService : IMessageService
             MessageId = created.Id,
             SenderId  = senderId,
             Content   = dto.Content,
+            Type      = dto.Type,
             Timestamp = created.Timestamp
         };
         await _convRepo.UpdateLastMessageAsync(dto.ConversationId, lastInfo);

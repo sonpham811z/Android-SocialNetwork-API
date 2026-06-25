@@ -152,6 +152,38 @@ services:
     networks:
       - socialnet
 
+  notification:
+    build:
+      context: ./src/Services/Notification
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "5095:5095"   # REST + SignalR hub (/hubs/notification)
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5095
+      RabbitMQ__Host: rabbitmq
+      Jwt__Issuer: SocialNetworkIdentityAPI
+      Jwt__Audience: SocialNetworkClient
+      Services__PostServiceUrl: http://post:5175
+      Services__UserServiceUrl: http://user:5220
+      # Path to the Firebase service-account JSON mounted via the volume below.
+      Firebase__CredentialsPath: /app/secrets/fcm-service-account.json
+    volumes:
+      # Provide the Firebase service-account key on the host (read-only).
+      # Dev: place the file at ./secrets/fcm-service-account.json next to this compose file.
+      - ./secrets/fcm-service-account.json:/app/secrets/fcm-service-account.json:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      user:
+        condition: service_started
+      post:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - socialnet
+
 networks:
   socialnet:
     driver: bridge

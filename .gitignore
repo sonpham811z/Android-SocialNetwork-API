@@ -16,6 +16,15 @@
 **/appsettings.Secret.json
 **/appsettings.*.json
 secrets.json
+# File .env chứa secret production cho docker-compose.prod.yml
+.env
+# Firebase Admin SDK credentials (Notification service)
+**/firebase-credentials.json
+**/*firebase-adminsdk*.json
+**/fcm-service-account.json
+# Thư mục chứa secret mount vào container (FCM key, ...)
+secrets/
+**/secrets/
 
 # =========================================
 # 3. Bỏ qua thư mục sinh ra khi chạy App (Log/Data)

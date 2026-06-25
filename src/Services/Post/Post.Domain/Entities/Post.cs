@@ -18,6 +18,9 @@ namespace Post.Domain.Entities
         public string? AudioPublicId { get; private set; }
         public string? AudioDuration { get; private set; }
         public List<double>? Waveform { get; private set; }
+        public string? VideoUrl { get; private set; }
+        public string? VideoPublicId { get; private set; }
+        public string? VideoThumbnailUrl { get; private set; }
         
         // Engagement
         public int LikesCount { get; private set; }
@@ -32,7 +35,10 @@ namespace Post.Domain.Entities
         
         // Privacy
         public PostVisibility Visibility { get; private set; }
-        
+
+        // Share reference
+        public Guid? OriginalPostId { get; private set; }
+
         // Navigation properties
         private List<Comment> _comments = new List<Comment>();
         public IReadOnlyCollection<Comment> Comments => _comments.AsReadOnly();
@@ -121,11 +127,124 @@ namespace Post.Domain.Entities
             };
         }
         
+        public static Post CreateVideoPost(
+            Guid userId,
+            string content,
+            string videoUrl,
+            string videoPublicId,
+            string? thumbnailUrl,
+            PostVisibility visibility = PostVisibility.Public)
+        {
+            ValidateContent(content);
+            if (string.IsNullOrWhiteSpace(videoUrl))
+                throw new ArgumentException("Video URL cannot be empty for video post");
+
+            return new Post
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Content = content,
+                Type = PostType.Video,
+                VideoUrl = videoUrl,
+                VideoPublicId = videoPublicId,
+                VideoThumbnailUrl = thumbnailUrl,
+                Visibility = visibility,
+                CreatedAt = DateTime.UtcNow,
+                LikesCount = 0,
+                CommentsCount = 0,
+                SharesCount = 0,
+                IsDeleted = false
+            };
+        }
+
+        public static Post CreateSharedPost(
+            Guid userId,
+            string content,
+            PostVisibility visibility,
+            Guid originalPostId)
+        {
+            if (content != null && content.Length > 5000)
+                throw new ArgumentException("Post content cannot exceed 5000 characters");
+
+            return new Post
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Content = content ?? string.Empty,
+                Type = PostType.Text,
+                Visibility = visibility,
+                OriginalPostId = originalPostId,
+                CreatedAt = DateTime.UtcNow,
+                LikesCount = 0,
+                CommentsCount = 0,
+                SharesCount = 0,
+                IsDeleted = false
+            };
+        }
+
         // Business logic methods
         public void UpdateContent(string newContent)
         {
             ValidateContent(newContent);
             Content = newContent;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        // ── Media editing ─────────────────────────────────────────────────────
+        private void ClearAllMedia()
+        {
+            ImageUrl = null;
+            ImagePublicId = null;
+            AudioUrl = null;
+            AudioPublicId = null;
+            AudioDuration = null;
+            Waveform = null;
+            VideoUrl = null;
+            VideoPublicId = null;
+            VideoThumbnailUrl = null;
+        }
+
+        /// <summary>Gỡ toàn bộ media, chuyển bài về dạng Text.</summary>
+        public void RemoveMedia()
+        {
+            ClearAllMedia();
+            Type = PostType.Text;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetImageMedia(string imageUrl, string imagePublicId)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                throw new ArgumentException("Image URL cannot be empty for image post");
+            ClearAllMedia();
+            Type = PostType.Image;
+            ImageUrl = imageUrl;
+            ImagePublicId = imagePublicId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetVideoMedia(string videoUrl, string videoPublicId, string? thumbnailUrl)
+        {
+            if (string.IsNullOrWhiteSpace(videoUrl))
+                throw new ArgumentException("Video URL cannot be empty for video post");
+            ClearAllMedia();
+            Type = PostType.Video;
+            VideoUrl = videoUrl;
+            VideoPublicId = videoPublicId;
+            VideoThumbnailUrl = thumbnailUrl;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetVoiceMedia(string audioUrl, string audioPublicId, string audioDuration, List<double> waveform)
+        {
+            if (string.IsNullOrWhiteSpace(audioUrl))
+                throw new ArgumentException("Audio URL cannot be empty for voice post");
+            ClearAllMedia();
+            Type = PostType.Voice;
+            AudioUrl = audioUrl;
+            AudioPublicId = audioPublicId;
+            AudioDuration = audioDuration;
+            Waveform = waveform;
             UpdatedAt = DateTime.UtcNow;
         }
         
@@ -204,7 +323,8 @@ namespace Post.Domain.Entities
     {
         Text = 0,
         Image = 1,
-        Voice = 2
+        Voice = 2,
+        Video = 3
     }
     
     public enum PostVisibility

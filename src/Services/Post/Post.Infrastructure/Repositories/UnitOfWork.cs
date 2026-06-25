@@ -15,7 +15,10 @@ namespace Post.Infrastructure.Repositories
         public IPostRepository Posts { get; }
         public ICommentRepository Comments { get; }
         public IPostLikeRepository PostLikes { get; }
+        public ICommentLikeRepository CommentLikes { get; }
+        public ISavedPostRepository SavedPosts { get; }
         public IStoryRepository Stories { get; }
+        public IBoardRepository Board { get; }
 
         public UnitOfWork(PostDbContext context)
         {
@@ -23,7 +26,10 @@ namespace Post.Infrastructure.Repositories
             Posts = new PostRepository(_context);
             Comments = new CommentRepository(_context);
             PostLikes = new PostLikeRepository(_context);
+            CommentLikes = new CommentLikeRepository(_context);
+            SavedPosts = new SavedPostRepository(_context);
             Stories = new StoryRepository(_context);
+            Board = new BoardRepository(_context);
         }
 
         public async Task<int> SaveChangesAsync()

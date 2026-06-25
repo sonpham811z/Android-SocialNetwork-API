@@ -3,6 +3,7 @@ using System.Text.Json;
 using FirebaseAdmin.Messaging;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Notification.Application.DTOs;
 using Notification.Application.Interfaces;
 using Notification.Domain.Interfaces;
 using Notification.Infrastructure.Hubs;
@@ -177,6 +178,49 @@ namespace Notification.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get post owner for post {PostId}", postId);
+                return null;
+            }
+        }
+    }
+
+    // ── User Settings HTTP Client ──────────────────────────────────────────────────
+
+    public class UserSettingsHttpClient : IUserSettingsHttpClient
+    {
+        private readonly HttpClient _client;
+        private readonly ILogger<UserSettingsHttpClient> _logger;
+
+        private static readonly JsonSerializerOptions JsonOpts =
+            new() { PropertyNameCaseInsensitive = true };
+
+        public UserSettingsHttpClient(HttpClient client, ILogger<UserSettingsHttpClient> logger)
+        {
+            _client = client;
+            _logger = logger;
+        }
+
+        public async Task<NotificationPreferences?> GetNotificationPreferencesAsync(Guid userId)
+        {
+            try
+            {
+                var response = await _client.GetAsync($"api/userprofile/settings/{userId}");
+                if (!response.IsSuccessStatusCode) return null;
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.TryGetProperty("data", out var dataEl) &&
+                    dataEl.TryGetProperty("notificationSettings", out var notifEl))
+                {
+                    return notifEl.Deserialize<NotificationPreferences>(JsonOpts);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to fetch notification preferences for user {UserId}", userId);
                 return null;
             }
         }

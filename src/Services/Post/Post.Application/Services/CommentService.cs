@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Post.Application.DTOs;
 using Post.Application.Interfaces;
@@ -44,25 +43,22 @@ namespace Post.Application.Services
             }
         }
 
-        public async Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId)
+        public async Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId, Guid? currentUserId = null)
         {
             try
             {
                 var comments = await _unitOfWork.Comments.GetPostCommentsAsync(postId);
-                
+
                 var commentDtos = new List<CommentDto>();
                 var userIds = comments.Select(c => c.UserId).Distinct().ToList();
                 var users = await _userProfileClient.GetUserProfilesAsync(userIds);
-               
 
                 foreach (var comment in comments.Where(c => !c.IsDeleted))
                 {
-                    Console.WriteLine(JsonSerializer.Serialize(comment));
-                    Console.WriteLine("-------------------------------------");
-                    
                     var user = users.FirstOrDefault(u => u.UserId == comment.UserId);
-                    
-                    Console.WriteLine(JsonSerializer.Serialize(user));
+                    var isLiked = currentUserId.HasValue &&
+                        await _unitOfWork.CommentLikes.HasUserLikedCommentAsync(comment.Id, currentUserId.Value);
+
                     commentDtos.Add(new CommentDto
                     {
                         Id = comment.Id,
@@ -72,7 +68,9 @@ namespace Post.Application.Services
                         Content = comment.Content,
                         ParentCommentId = comment.ParentCommentId,
                         CreatedAt = comment.CreatedAt,
-                        UpdatedAt = comment.UpdatedAt
+                        UpdatedAt = comment.UpdatedAt,
+                        LikesCount = comment.LikesCount,
+                        IsLikedByCurrentUser = isLiked
                     });
                 }
 
@@ -101,8 +99,8 @@ namespace Post.Application.Services
                 await _unitOfWork.Posts.UpdateAsync(post);
                 await _unitOfWork.SaveChangesAsync();
 
-                // Publish event
-                // await _messagePublisher.PublishCommentCreatedAsync(comment.Id, postId, userId, comment.Content);
+                // Publish event → Notification service tạo thông báo cho chủ bài viết
+                await _messagePublisher.PublishCommentCreatedAsync(comment.Id, postId, userId, comment.Content);
 
                 var commentDto = await MapToCommentDtoAsync(comment);
                 return ApiResponse<CommentDto>.SuccessResponse(commentDto, "Comment created successfully");
@@ -170,21 +168,70 @@ namespace Post.Application.Services
             }
         }
 
-        private async Task<CommentDto> MapToCommentDtoAsync(Comment comment)
+        public async Task<ApiResponse<bool>> LikeCommentAsync(Guid commentId, Guid userId)
+        {
+            try
+            {
+                var comment = await _unitOfWork.Comments.GetByIdAsync(commentId);
+                if (comment == null || comment.IsDeleted)
+                    return ApiResponse<bool>.ErrorResponse("Comment not found");
+
+                var existing = await _unitOfWork.CommentLikes.GetByCommentAndUserIncludingDeletedAsync(commentId, userId);
+                if (existing != null && !existing.IsDeleted)
+                    return ApiResponse<bool>.SuccessResponse(true, "Already liked");
+
+                if (existing != null)
+                    existing.RestoreLike();
+                else
+                    await _unitOfWork.CommentLikes.AddAsync(CommentLike.Create(commentId, userId));
+
+                await _unitOfWork.SaveChangesAsync();
+
+                comment.IncrementLikesCount();
+                await _unitOfWork.SaveChangesAsync();
+
+                return ApiResponse<bool>.SuccessResponse(true, "Comment liked");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error liking comment: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<bool>> UnlikeCommentAsync(Guid commentId, Guid userId)
+        {
+            try
+            {
+                var comment = await _unitOfWork.Comments.GetByIdAsync(commentId);
+                if (comment == null || comment.IsDeleted)
+                    return ApiResponse<bool>.ErrorResponse("Comment not found");
+
+                var existing = await _unitOfWork.CommentLikes.GetByCommentAndUserAsync(commentId, userId);
+                if (existing == null)
+                    return ApiResponse<bool>.ErrorResponse("You have not liked this comment");
+
+                existing.SoftDelete();
+                await _unitOfWork.SaveChangesAsync();
+
+                comment.DecrementLikesCount();
+                await _unitOfWork.SaveChangesAsync();
+
+                return ApiResponse<bool>.SuccessResponse(false, "Comment unliked");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error unliking comment: {ex.Message}");
+            }
+        }
+
+        private async Task<CommentDto> MapToCommentDtoAsync(Comment comment, Guid? currentUserId = null)
         {
             var userProfile = await _userProfileClient.GetUserProfileAsync(comment.UserId);
-            
-            // Fallback to default UserProfileDto if not found
-            if (userProfile == null)
-            {
-                userProfile = new UserProfileDto 
-                { 
-                    Id = comment.UserId, 
-                    Name = "Unknown User", 
-                    UserName = "unknown",
-                    FullName = "Unknown User"
-                };
-            }
+
+            userProfile ??= new UserProfileDto { Id = comment.UserId, Name = "Unknown User", UserName = "unknown", FullName = "Unknown User" };
+
+            var isLiked = currentUserId.HasValue &&
+                await _unitOfWork.CommentLikes.HasUserLikedCommentAsync(comment.Id, currentUserId.Value);
 
             return new CommentDto
             {
@@ -195,7 +242,9 @@ namespace Post.Application.Services
                 Content = comment.Content,
                 ParentCommentId = comment.ParentCommentId,
                 CreatedAt = comment.CreatedAt,
-                UpdatedAt = comment.UpdatedAt
+                UpdatedAt = comment.UpdatedAt,
+                LikesCount = comment.LikesCount,
+                IsLikedByCurrentUser = isLiked
             };
         }
     }

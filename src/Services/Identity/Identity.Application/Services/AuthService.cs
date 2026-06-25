@@ -23,6 +23,7 @@ namespace Identity.Application.Services
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly IEventPublisher _eventPublisher;
+        private readonly IUserServiceClient _userServiceClient;
 
         // Constructor
         public AuthService (
@@ -35,7 +36,8 @@ namespace Identity.Application.Services
             IGoogleAuthService googleAuthService,
             IEmailService emailService,
             IConfiguration configuration,
-            IEventPublisher eventPublisher
+            IEventPublisher eventPublisher,
+            IUserServiceClient userServiceClient
         )
         {
             _userRepository = userRepository;
@@ -48,6 +50,7 @@ namespace Identity.Application.Services
             _emailService = emailService;
             _configuration = configuration;
             _eventPublisher = eventPublisher;
+            _userServiceClient = userServiceClient;
         }
         
         private async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userid, string ipAddress)
@@ -111,7 +114,12 @@ namespace Identity.Application.Services
                 LastName = user.LastName,
                 Gender = user.Gender,
                 DateOfBirth = user.DateOfBirth
-            }) ;
+            });
+
+            // Tạo profile trực tiếp (không qua RabbitMQ) để đảm bảo profile luôn tồn tại
+            _ = _userServiceClient.EnsureProfileCreatedAsync(
+                user.Id, user.Email, user.FirstName, user.LastName,
+                user.DateOfBirth, user.Gender);
 
 
             // Send email verification
@@ -218,6 +226,10 @@ namespace Identity.Application.Services
                         FirstName = user.FirstName,
                         LastName = user.LastName,
                     });
+
+                    _ = _userServiceClient.EnsureProfileCreatedAsync(
+                        user.Id, user.Email, user.FirstName, user.LastName,
+                        dateOfBirth: null, gender: null);
                 }
                 else
                 {
@@ -296,6 +308,47 @@ namespace Identity.Application.Services
             await _emailVerificationRepository.MarkAsUsedAsync(verificationToken.Id);
 
             return ApiResponse<bool>.SuccessResponse(true, "Email verified successfully");
+        }
+
+        public async Task<ApiResponse<bool>> ResendVerificationEmailAsync(ResendVerificationDto dto)
+        {
+            var user = await _userRepository.GetByEmailAsync(dto.Email);
+
+            // Don't reveal whether the email exists
+            if (user == null)
+            {
+                return ApiResponse<bool>.SuccessResponse(true, "If the email exists, a verification link has been sent");
+            }
+
+            if (user.IsEmailConfirmed)
+            {
+                return ApiResponse<bool>.ErrorResponse("Email is already verified");
+            }
+
+            // Issue a fresh verification token (old ones simply expire / stay unused)
+            var verificationToken = new EmailVerificationToken
+            {
+                UserId = user.Id,
+                Token = Guid.NewGuid().ToString(),
+                ExpiresAt = DateTime.UtcNow.AddDays(1),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _emailVerificationRepository.CreateAsync(verificationToken);
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendVerificationEmailAsync(user.Email, verificationToken.Token);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi gửi email ngầm: {ex.Message}");
+                }
+            });
+
+            return ApiResponse<bool>.SuccessResponse(true, "If the email exists, a verification link has been sent");
         }
 
         public async Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordDto dto)

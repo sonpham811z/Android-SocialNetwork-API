@@ -46,4 +46,14 @@ namespace Notification.Application.Interfaces
         /// <summary>Returns the ownerId (UserId) of the given post, or null if not found.</summary>
         Task<Guid?> GetPostOwnerAsync(Guid postId);
     }
+
+    /// <summary>Reads a user's notification preferences from the User service.</summary>
+    public interface IUserSettingsHttpClient
+    {
+        /// <summary>
+        /// Returns the recipient's notification preferences, or <c>null</c> if the User
+        /// service is unreachable or has no record (caller should then default to sending).
+        /// </summary>
+        Task<NotificationPreferences?> GetNotificationPreferencesAsync(Guid userId);
+    }
 }

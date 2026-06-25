@@ -72,6 +72,14 @@ namespace Friend.API.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        // GET api/friends/suggestions?limit=10  — "People you may know" (friends-of-friends)
+        [HttpGet("suggestions")]
+        public async Task<IActionResult> GetSuggestions([FromQuery] int limit = 10)
+        {
+            var result = await _friendService.GetSuggestionsAsync(CurrentUserId, limit);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         // GET api/friends/summary/{userId}
         [HttpGet("summary/{userId:guid}")]
         public async Task<IActionResult> GetSocialSummary(Guid userId)

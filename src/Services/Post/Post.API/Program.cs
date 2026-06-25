@@ -124,6 +124,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IStoryService, StoryService>();
+builder.Services.AddScoped<IBoardService, BoardService>();
 
 // Register Infrastructure Services
 builder.Services.AddScoped<IMediaService, Mediaservice>();

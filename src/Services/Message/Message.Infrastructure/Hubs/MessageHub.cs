@@ -121,10 +121,24 @@ public class MessageHub : Hub
             Type           = request.Type
         };
 
-        var messageDto = await _messageService.SendMessageAsync(userId, dto);
+        try
+        {
+            var messageDto = await _messageService.SendMessageAsync(userId, dto);
 
-        // Acknowledge to the sender with the server-assigned message ID and timestamp
-        await Clients.Caller.SendAsync("MessageAcknowledged", messageDto);
+            // Acknowledge to the sender with the server-assigned message ID and timestamp
+            await Clients.Caller.SendAsync("MessageAcknowledged", messageDto);
+        }
+        catch (Exception ex) when (
+            ex is InvalidOperationException
+               or UnauthorizedAccessException
+               or ArgumentException
+               or KeyNotFoundException)
+        {
+            // Surface the domain reason (e.g. "non-friend") to the client.
+            // HubException messages are always delivered to clients, unlike generic
+            // exceptions which are masked when EnableDetailedErrors is off.
+            throw new HubException(ex.Message);
+        }
     }
 
     /// <summary>

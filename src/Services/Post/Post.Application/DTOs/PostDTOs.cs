@@ -58,6 +58,8 @@ namespace Post.Application.DTOs
         public string? AudioUrl { get; set; }
         public string? AudioDuration { get; set; }
         public List<double>? Waveform { get; set; }
+        public string? VideoUrl { get; set; }
+        public string? VideoThumbnailUrl { get; set; }
         public int LikesCount { get; set; }
         public int CommentsCount { get; set; }
         public int SharesCount { get; set; }
@@ -65,7 +67,18 @@ namespace Post.Application.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsLikedByCurrentUser { get; set; }
+        public bool IsSavedByCurrentUser { get; set; }
         public List<CommentDto>? Comments { get; set; }
+
+        // Share reference
+        public Guid? OriginalPostId { get; set; }
+        public PostDto? OriginalPost { get; set; }
+    }
+
+    public class SharePostDto
+    {
+        public string Content { get; set; } = string.Empty;
+        public string Visibility { get; set; } = "Public";
     }
 
     public class CreateTextPostDto
@@ -88,6 +101,13 @@ namespace Post.Application.DTOs
         // Audio will be uploaded via IFormFile
     }
 
+    public class CreateVideoPostDto
+    {
+        public string Content { get; set; }
+        public string Visibility { get; set; } = "Public";
+        // Video will be uploaded via IFormFile
+    }
+
     public class UpdatePostDto
     {
         public string Content { get; set; }
@@ -105,6 +125,8 @@ namespace Post.Application.DTOs
         public Guid? ParentCommentId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public int LikesCount { get; set; }
+        public bool IsLikedByCurrentUser { get; set; }
     }
 
     public class CreateCommentDto

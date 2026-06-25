@@ -34,6 +34,8 @@ jobs:
             context: src/Services/Post
           - name: message
             context: src/Services/Message
+          - name: notification
+            context: src/Services/Notification
 
     steps:
       - name: Checkout code
@@ -126,7 +128,19 @@ jobs:
             CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
             CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
             CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+
+            # ── Agora (voice/video call - Message service) ─────────────────────
+            AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
+            AGORA_APP_CERTIFICATE=${{ secrets.AGORA_APP_CERTIFICATE }}
             ENVEOF
+
+            # ── Firebase service-account key (for Notification service push/FCM) ──
+            # Stored as a GitHub secret (the full JSON content of the service account file).
+            mkdir -p /opt/socialnet/secrets
+            cat > /opt/socialnet/secrets/fcm-service-account.json << 'FCMEOF'
+            ${{ secrets.FCM_SERVICE_ACCOUNT }}
+            FCMEOF
+            chmod 600 /opt/socialnet/secrets/fcm-service-account.json
 
             # Login to GHCR to pull private images
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin

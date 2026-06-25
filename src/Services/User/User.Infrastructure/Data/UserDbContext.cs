@@ -85,6 +85,9 @@ namespace User.Infrastructure.Data
                     .WithOne(a => a.UserProfile)
                     .HasForeignKey(a => a.UserProfileId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // Ẩn các hồ sơ đã xóa mềm khỏi mọi truy vấn (GetById, search, batch...)
+                entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
             modelBuilder.Entity<UserSettings>(entity =>

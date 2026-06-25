@@ -13,8 +13,13 @@ namespace Message.API.Controllers;
 public class MessageController : ControllerBase
 {
     private readonly IMessageService _service;
+    private readonly IMediaService   _media;
 
-    public MessageController(IMessageService service) => _service = service;
+    public MessageController(IMessageService service, IMediaService media)
+    {
+        _service = service;
+        _media   = media;
+    }
 
     private Guid CurrentUserId =>
         Guid.Parse(
@@ -36,6 +41,26 @@ public class MessageController : ControllerBase
     {
         var result = await _service.SendMessageAsync(CurrentUserId, dto);
         return Ok(ApiResponse<MessageDto>.Ok(result, "Message sent."));
+    }
+
+    /// <summary>
+    /// Upload an image attachment for a chat message.
+    /// Returns the public Cloudinary URL — the client then sends a message
+    /// (via SignalR or POST /api/messages) with Type=Image and Content set to this URL.
+    /// </summary>
+    [HttpPost("upload-image")]
+    [ProducesResponseType(typeof(ApiResponse<MediaUploadResponseDto>), 200)]
+    [ProducesResponseType(400)]
+    public async Task<ActionResult<ApiResponse<MediaUploadResponseDto>>> UploadImage([FromForm] IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(ApiResponse<MediaUploadResponseDto>.Fail("Image file is required."));
+
+        await using var stream = file.OpenReadStream();
+        var uploaded = await _media.UploadImageAsync(stream, file.FileName, file.Length);
+
+        var dto = new MediaUploadResponseDto { Url = uploaded.Url, PublicId = uploaded.PublicId };
+        return Ok(ApiResponse<MediaUploadResponseDto>.Ok(dto, "Image uploaded."));
     }
 
     /// <summary>

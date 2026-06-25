@@ -10,6 +10,7 @@ namespace Friend.Application.Interfaces
         Task<ApiResponse<List<Guid>>> GetFriendIdsAsync(Guid userId);
         Task<ApiResponse<bool>> UnfriendAsync(Guid userId, Guid targetUserId);
         Task<ApiResponse<UserSocialSummaryDto>> GetSocialSummaryAsync(Guid targetUserId, Guid? currentUserId = null);
+        Task<ApiResponse<List<FriendSuggestionDto>>> GetSuggestionsAsync(Guid userId, int limit);
     }
 
     public interface IFriendRequestService

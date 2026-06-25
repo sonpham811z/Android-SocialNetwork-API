@@ -56,7 +56,7 @@ namespace Friend.Application.Services
 
                 await _unitOfWork.SaveChangesAsync();
 
-                // await _publisher.PublishUserFollowedAsync(followerId, followeeId);
+                await _publisher.PublishUserFollowedAsync(followerId, followeeId);
 
                 return ApiResponse<bool>.SuccessResponse(true, "Followed successfully.");
             }

@@ -14,18 +14,38 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<PostDto>> CreateTextPostAsync(Guid userId, CreateTextPostDto dto);
         Task<ApiResponse<PostDto>> CreateImagePostAsync(Guid userId, CreateImagePostDto dto, IFormFile image);
         Task<ApiResponse<PostDto>> CreateVoicePostAsync(Guid userId, CreateVoicePostDto dto, IFormFile audio);
+        Task<ApiResponse<PostDto>> CreateVideoPostAsync(Guid userId, CreateVideoPostDto dto, IFormFile video);
+        Task<ApiResponse<PostDto>> SharePostAsync(Guid originalPostId, Guid userId, SharePostDto dto);
         Task<ApiResponse<PostDto>> UpdatePostAsync(Guid postId, Guid userId, UpdatePostDto dto);
+        Task<ApiResponse<PostDto>> UpdatePostMediaAsync(Guid postId, Guid userId, string action, string? mediaType, IFormFile? file);
         Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> LikePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> UnlikePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> SavePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> UnsavePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<PaginatedResponse<PostDto>>> GetSavedPostsAsync(Guid userId, int page, int pageSize);
     }
 
     public interface ICommentService
     {
         Task<ApiResponse<CommentDto>> GetCommentByIdAsync(Guid commentId);
-        Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId);
+        Task<ApiResponse<List<CommentDto>>> GetPostCommentsAsync(Guid postId, Guid? currentUserId = null);
         Task<ApiResponse<CommentDto>> CreateCommentAsync(Guid postId, Guid userId, CreateCommentDto dto);
         Task<ApiResponse<CommentDto>> UpdateCommentAsync(Guid commentId, Guid userId, UpdateCommentDto dto);
+        Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid userId);
+        Task<ApiResponse<bool>> LikeCommentAsync(Guid commentId, Guid userId);
+        Task<ApiResponse<bool>> UnlikeCommentAsync(Guid commentId, Guid userId);
+    }
+
+    public interface IBoardService
+    {
+        Task<ApiResponse<PaginatedResponse<BoardPostDto>>> GetPostsAsync(string? tag, string sort, int page, int pageSize, Guid? currentUserId);
+        Task<ApiResponse<BoardPostDto>> CreatePostAsync(Guid userId, CreateBoardPostDto dto);
+        Task<ApiResponse<bool>> VoteAsync(Guid postId, Guid userId, string voteType);
+        Task<ApiResponse<bool>> DeleteVoteAsync(Guid postId, Guid userId);
+        Task<ApiResponse<bool>> DeletePostAsync(Guid postId, Guid userId);
+        Task<ApiResponse<List<BoardCommentDto>>> GetCommentsAsync(Guid boardPostId, Guid? currentUserId);
+        Task<ApiResponse<BoardCommentDto>> AddCommentAsync(Guid boardPostId, Guid userId, CreateBoardCommentDto dto);
         Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid userId);
     }
 

@@ -56,6 +56,16 @@ namespace Friend.Infrastructure.Repositories
             return friendships.Select(f => f.GetOtherUserId(userId)).ToList();
         }
 
+        public async Task<List<Friendship>> GetFriendshipsForUsersAsync(IEnumerable<Guid> userIds)
+        {
+            var ids = userIds.ToList();
+            if (ids.Count == 0) return new List<Friendship>();
+
+            return await _ctx.Friendships
+                .Where(f => ids.Contains(f.UserId1) || ids.Contains(f.UserId2))
+                .ToListAsync();
+        }
+
         public async Task<Friendship> AddAsync(Friendship friendship)
         {
             await _ctx.Friendships.AddAsync(friendship);
@@ -105,6 +115,13 @@ namespace Friend.Infrastructure.Repositories
 
         public Task<int> GetPendingReceivedCountAsync(Guid userId) =>
             _ctx.FriendRequests.CountAsync(r => r.ReceiverId == userId && r.Status == FriendRequestStatus.Pending);
+
+        public Task<List<Guid>> GetPendingPartnerIdsAsync(Guid userId) =>
+            _ctx.FriendRequests
+                .Where(r => r.Status == FriendRequestStatus.Pending &&
+                            (r.SenderId == userId || r.ReceiverId == userId))
+                .Select(r => r.SenderId == userId ? r.ReceiverId : r.SenderId)
+                .ToListAsync();
 
         public async Task<FriendRequest> AddAsync(FriendRequest request)
         {
@@ -198,6 +215,12 @@ namespace Friend.Infrastructure.Repositories
             _ctx.Blocks.AnyAsync(b =>
                 (b.BlockerId == userA && b.BlockedId == userB) ||
                 (b.BlockerId == userB && b.BlockedId == userA));
+
+        public Task<List<Guid>> GetBlockRelatedUserIdsAsync(Guid userId) =>
+            _ctx.Blocks
+                .Where(b => b.BlockerId == userId || b.BlockedId == userId)
+                .Select(b => b.BlockerId == userId ? b.BlockedId : b.BlockerId)
+                .ToListAsync();
 
         public async Task<Block> AddAsync(Block block)
         {

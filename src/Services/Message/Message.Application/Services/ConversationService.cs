@@ -115,6 +115,7 @@ public class ConversationService : IConversationService
             MessageId = c.LastMessage.MessageId,
             SenderId  = c.LastMessage.SenderId,
             Content   = c.LastMessage.Content,
+            Type      = c.LastMessage.Type,
             Timestamp = c.LastMessage.Timestamp
         },
         UpdatedAt = c.UpdatedAt

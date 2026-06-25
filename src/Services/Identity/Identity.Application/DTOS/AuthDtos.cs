@@ -72,6 +72,13 @@ namespace Identity.Application.DTOs
         [Required]
         public string Token { get; set; }
     }
+
+    public class ResendVerificationDto
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+    }
     
     public class ChangePasswordDto
     {

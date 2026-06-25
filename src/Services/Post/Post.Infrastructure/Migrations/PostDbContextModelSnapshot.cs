@@ -112,6 +112,9 @@ namespace Post.Infrastructure.Migrations
                     b.Property<int>("LikesCount")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("OriginalPostId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("SharesCount")
                         .HasColumnType("integer");
 
@@ -124,6 +127,18 @@ namespace Post.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("VideoPublicId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("VideoThumbnailUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("VideoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<int>("Visibility")
                         .HasColumnType("integer");
 
@@ -133,6 +148,8 @@ namespace Post.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("OriginalPostId");
 
                     b.HasIndex("UserId");
 

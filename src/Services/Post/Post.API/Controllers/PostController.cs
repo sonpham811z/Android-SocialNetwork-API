@@ -48,7 +48,11 @@ namespace Post.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _postService.GetUserPostsAsync(userId, page, pageSize);
+            Guid? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+                currentUserId = GetCurrentUserId();
+
+            var result = await _postService.GetUserPostsAsync(userId, page, pageSize, currentUserId);
             return Ok(result);
         }
 
@@ -136,6 +140,29 @@ namespace Post.API.Controllers
         }
 
         /// <summary>
+        /// Create a video post
+        /// </summary>
+        [Authorize]
+        [HttpPost("video")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateVideoPost([FromForm] CreateVideoPostDto dto, IFormFile video)
+        {
+            var userId = GetCurrentUserId();
+
+            if (dto.Content == null || video == null)
+                return BadRequest(ApiResponse<PostDto>.ErrorResponse("Media file is required"));
+
+            var result = await _postService.CreateVideoPostAsync(userId, dto, video);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return CreatedAtAction(nameof(GetPostById), new { id = result.Data.Id }, result);
+        }
+
+        /// <summary>
         /// Update a post
         /// </summary>
         [Authorize]
@@ -148,6 +175,36 @@ namespace Post.API.Controllers
             var userId = GetCurrentUserId();
 
             var result = await _postService.UpdatePostAsync(postId: id, userId, dto);
+
+            if (!result.Success)
+            {
+                if (result.Message.Contains("not found"))
+                    return NotFound(result);
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Update a post's media (replace with a new image/video/voice, or remove media).
+        /// action = "remove" | "replace"; mediaType = "image" | "video" | "voice" (when replacing).
+        /// </summary>
+        [Authorize]
+        [HttpPut("{id:guid}/media")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdatePostMedia(
+            Guid id,
+            [FromForm] string action,
+            [FromForm] string? mediaType,
+            IFormFile? file)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.UpdatePostMediaAsync(id, userId, action, mediaType, file);
 
             if (!result.Success)
             {
@@ -193,6 +250,30 @@ namespace Post.API.Controllers
         }
 
         /// <summary>
+        /// Share a post to feed
+        /// </summary>
+        [Authorize]
+        [HttpPost("{id:guid}/share")]
+        [ProducesResponseType(typeof(ApiResponse<PostDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> SharePost(Guid id, [FromBody] SharePostDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.SharePostAsync(id, userId, dto);
+
+            if (!result.Success)
+            {
+                if (result.Message.Contains("không tồn tại"))
+                    return NotFound(result);
+                return BadRequest(result);
+            }
+
+            return CreatedAtAction(nameof(GetPostById), new { id = result.Data.Id }, result);
+        }
+
+        /// <summary>
         /// Unlike a post
         /// </summary>
         [Authorize]
@@ -206,6 +287,50 @@ namespace Post.API.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Save (bookmark) a post
+        /// </summary>
+        [Authorize]
+        [HttpPost("{id:guid}/save")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SavePost(Guid id)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.SavePostAsync(id, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Unsave (remove bookmark from) a post
+        /// </summary>
+        [Authorize]
+        [HttpDelete("{id:guid}/save")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UnsavePost(Guid id)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.UnsavePostAsync(id, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Get the current user's saved (bookmarked) posts, newest-saved first.
+        /// </summary>
+        [Authorize]
+        [HttpGet("saved")]
+        [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<PostDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSavedPosts(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var userId = GetCurrentUserId();
+
+            var result = await _postService.GetSavedPostsAsync(userId, page, pageSize);
+            return Ok(result);
+        }
+
         // ==================== COMMENT ENDPOINTS ====================
 
         /// <summary>
@@ -215,7 +340,11 @@ namespace Post.API.Controllers
         [ProducesResponseType(typeof(ApiResponse<CommentDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPostComments(Guid postId)
         {
-            var result = await _commentService.GetPostCommentsAsync(postId);
+            Guid? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+                currentUserId = GetCurrentUserId();
+
+            var result = await _commentService.GetPostCommentsAsync(postId, currentUserId);
             return Ok(result);
         }
 
@@ -268,6 +397,32 @@ namespace Post.API.Controllers
             var userId = GetCurrentUserId();
 
             var result = await _commentService.DeleteCommentAsync(commentId, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Like a comment
+        /// </summary>
+        [Authorize]
+        [HttpPost("comments/{commentId:guid}/like")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> LikeComment(Guid commentId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _commentService.LikeCommentAsync(commentId, userId);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Unlike a comment
+        /// </summary>
+        [Authorize]
+        [HttpDelete("comments/{commentId:guid}/like")]
+        [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UnlikeComment(Guid commentId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _commentService.UnlikeCommentAsync(commentId, userId);
             return Ok(result);
         }
 

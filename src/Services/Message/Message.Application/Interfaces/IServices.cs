@@ -68,6 +68,24 @@ public interface ISignalRMessageService
     Task SendReadReceiptAsync(string conversationId, ReadReceiptEventDto receipt);
 }
 
+/// <summary>Generates Agora RTC tokens for voice/video calls.</summary>
+public interface IAgoraTokenService
+{
+    string GenerateRtcToken(string channelName, string uid, bool isPublisher);
+}
+
+/// <summary>
+/// Uploads chat media (images) to Cloudinary. Implemented in the Infrastructure layer.
+/// Takes a raw stream so the Application layer stays free of ASP.NET (IFormFile) dependencies.
+/// </summary>
+public interface IMediaService
+{
+    Task<MediaUploadResult> UploadImageAsync(Stream content, string fileName, long length);
+}
+
+/// <summary>Result of a media upload: the public URL and the Cloudinary public id (for later deletion).</summary>
+public record MediaUploadResult(string Url, string PublicId);
+
 // ── Domain events ─────────────────────────────────────────────────────────────
 
 /// <summary>
