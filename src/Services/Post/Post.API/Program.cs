@@ -12,10 +12,6 @@ using Post.Infrastructure.Repositories;
 using Post.Infrastructure.Services;
 using System.Text;
 
-// 2. BẬT HIỂN THỊ TOKEN LỖI (ShowPII) - XÓA HOẶC COMMENT LẠI KHI LÊN PRODUCTION NHÉ BRO!
-IdentityModelEventSource.ShowPII = true;
-IdentityModelEventSource.LogCompleteSecurityArtifact = true;
-
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
@@ -143,6 +139,11 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
+    // Chỉ lộ chi tiết token/PII trong môi trường Development để debug.
+    // KHÔNG bật ở Production (sẽ ghi nguyên JWT/PII vào log).
+    IdentityModelEventSource.ShowPII = true;
+    IdentityModelEventSource.LogCompleteSecurityArtifact = true;
+
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {

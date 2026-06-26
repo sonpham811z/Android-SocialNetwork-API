@@ -143,6 +143,11 @@ namespace Post.Application.Services
                 // Publish event
                 await _messagePublisher.PublishPostCreatedAsync(post.Id, userId, post.Content);
 
+                // Thông báo cho những người được @nhắc trong bài viết
+                await MentionHelper.PublishMentionsAsync(
+                    post.Content, post.Id, userId, isComment: false,
+                    _userProfileClient, _messagePublisher);
+
                 // Update user posts count
                 await _userProfileClient.UpdatePostsCountAsync(userId, 1);
 
@@ -171,6 +176,11 @@ namespace Post.Application.Services
 
                 // Publish event
                 await _messagePublisher.PublishPostCreatedAsync(post.Id, userId, post.Content);
+
+                // Thông báo cho những người được @nhắc trong bài viết
+                await MentionHelper.PublishMentionsAsync(
+                    post.Content, post.Id, userId, isComment: false,
+                    _userProfileClient, _messagePublisher);
 
                 // Update user posts count
                 await _userProfileClient.UpdatePostsCountAsync(userId, 1);
@@ -202,6 +212,11 @@ namespace Post.Application.Services
                 // Publish event
                 await _messagePublisher.PublishPostCreatedAsync(post.Id, userId, post.Content);
 
+                // Thông báo cho những người được @nhắc trong bài viết
+                await MentionHelper.PublishMentionsAsync(
+                    post.Content, post.Id, userId, isComment: false,
+                    _userProfileClient, _messagePublisher);
+
                 // Update user posts count
                 await _userProfileClient.UpdatePostsCountAsync(userId, 1);
 
@@ -231,6 +246,11 @@ namespace Post.Application.Services
 
                 // Publish event
                 await _messagePublisher.PublishPostCreatedAsync(post.Id, userId, post.Content);
+
+                // Thông báo cho những người được @nhắc trong bài viết
+                await MentionHelper.PublishMentionsAsync(
+                    post.Content, post.Id, userId, isComment: false,
+                    _userProfileClient, _messagePublisher);
 
                 // Update user posts count
                 await _userProfileClient.UpdatePostsCountAsync(userId, 1);

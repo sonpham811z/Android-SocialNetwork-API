@@ -118,6 +118,21 @@ namespace Post.Infrastructure.Messaging
             await PublishMessageAsync("post.liked", message);
         }
 
+        public async Task PublishUserMentionedAsync(Guid postId, Guid actorId, Guid recipientId, bool isComment)
+        {
+            var message = new
+            {
+                EventType = "UserMentioned",
+                PostId = postId,
+                ActorId = actorId,
+                RecipientId = recipientId,
+                IsComment = isComment,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await PublishMessageAsync("post.mentioned", message);
+        }
+
         private async Task PublishMessageAsync(string routingKey, object message)
         {
             if (_channel == null || !_channel.IsOpen)

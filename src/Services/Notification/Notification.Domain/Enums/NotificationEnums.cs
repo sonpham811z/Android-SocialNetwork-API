@@ -7,7 +7,8 @@ namespace Notification.Domain.Enums
         UserFollowed,
         PostLiked,
         CommentCreated,
-        MessageReceived
+        MessageReceived,
+        Mentioned
     }
 
     public enum NotificationStatus

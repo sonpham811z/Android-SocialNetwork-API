@@ -116,6 +116,7 @@ namespace Notification.Infrastructure.Messaging
                 // Post events
                 await _channel.QueueBindAsync(_settings.QueueName, _settings.ExchangeName, "post.liked");
                 await _channel.QueueBindAsync(_settings.QueueName, _settings.ExchangeName, "comment.created");
+                await _channel.QueueBindAsync(_settings.QueueName, _settings.ExchangeName, "post.mentioned");
 
                 // Message Service events
                 await _channel.QueueBindAsync(_settings.QueueName, _settings.ExchangeName, "message.created");
@@ -217,6 +218,23 @@ namespace Notification.Infrastructure.Messaging
                         actorId:     e.UserId,
                         type:        NotificationType.CommentCreated,
                         message:     "commented on your post.",
+                        referenceId: e.PostId);
+                    break;
+                }
+
+                case "UserMentioned":
+                {
+                    var e = JsonSerializer.Deserialize<UserMentionedEventDto>(message, opts);
+                    if (e is null) break;
+                    if (e.RecipientId == e.ActorId) break; // không tự nhắc mình
+
+                    await notificationService.CreateAndSendAsync(
+                        recipientId: e.RecipientId,
+                        actorId:     e.ActorId,
+                        type:        NotificationType.Mentioned,
+                        message:     e.IsComment
+                            ? "mentioned you in a comment."
+                            : "mentioned you in a post.",
                         referenceId: e.PostId);
                     break;
                 }
