@@ -562,6 +562,169 @@ namespace Post.Application.Services
             }
         }
 
+        // ── Report / moderation ────────────────────────────────────────────────
+
+        public async Task<ApiResponse<bool>> ReportPostAsync(Guid postId, Guid reporterId, string reason)
+        {
+            try
+            {
+                var post = await _unitOfWork.Posts.GetByIdAsync(postId);
+                if (post == null || post.IsDeleted)
+                    return ApiResponse<bool>.ErrorResponse("Post not found");
+
+                if (post.UserId == reporterId)
+                    return ApiResponse<bool>.ErrorResponse("Bạn không thể báo cáo bài viết của chính mình");
+
+                var existing = await _unitOfWork.Reports.GetPendingByPostAndReporterAsync(postId, reporterId);
+                if (existing != null)
+                    return ApiResponse<bool>.SuccessResponse(true, "Bạn đã báo cáo bài viết này rồi");
+
+                var report = PostReport.Create(postId, reporterId, reason);
+                await _unitOfWork.Reports.AddAsync(report);
+                await _unitOfWork.SaveChangesAsync();
+
+                return ApiResponse<bool>.SuccessResponse(true, "Đã gửi báo cáo");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error reporting post: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<PaginatedResponse<ReportDto>>> GetReportsAsync(string? status, int page, int pageSize)
+        {
+            try
+            {
+                var st = ParseReportStatus(status);
+                var reports = await _unitOfWork.Reports.GetReportsAsync(st, page, pageSize);
+                var total   = await _unitOfWork.Reports.CountReportsAsync(st);
+
+                var postIds = reports.Select(r => r.PostId).Distinct().ToList();
+                var posts   = await _unitOfWork.Posts.GetByIdsIgnoringFiltersAsync(postIds);
+
+                var userIds = reports.Select(r => r.ReporterId)
+                    .Concat(posts.Select(p => p.UserId))
+                    .Distinct().ToList();
+                var profiles = userIds.Count > 0
+                    ? await _userProfileClient.GetUserProfilesAsync(userIds)
+                    : new List<UserProfileDto>();
+
+                string? NameOf(Guid id)
+                {
+                    var p = profiles.FirstOrDefault(x => x.UserId == id || x.Id == id);
+                    return p?.GetDisplayName();
+                }
+
+                var dtos = reports.Select(r =>
+                {
+                    var post = posts.FirstOrDefault(p => p.Id == r.PostId);
+                    return new ReportDto
+                    {
+                        Id            = r.Id,
+                        PostId        = r.PostId,
+                        Reason        = r.Reason,
+                        Status        = r.Status.ToString(),
+                        CreatedAt     = r.CreatedAt,
+                        ReporterId    = r.ReporterId,
+                        ReporterName  = NameOf(r.ReporterId),
+                        PostContent   = post?.Content ?? "(bài viết không tồn tại)",
+                        PostType      = post?.Type.ToString() ?? "Text",
+                        PostImageUrl  = post?.ImageUrl,
+                        PostOwnerId   = post?.UserId ?? Guid.Empty,
+                        PostOwnerName = post != null ? NameOf(post.UserId) : null,
+                        PostIsHidden  = post?.IsHidden ?? false,
+                        PostIsDeleted = post?.IsDeleted ?? false
+                    };
+                }).ToList();
+
+                return ApiResponse<PaginatedResponse<ReportDto>>.SuccessResponse(new PaginatedResponse<ReportDto>
+                {
+                    Items           = dtos,
+                    TotalItems      = total,
+                    Page            = page,
+                    PageSize        = pageSize,
+                    TotalPages      = (int)Math.Ceiling(total / (double)pageSize),
+                    HasNextPage     = page * pageSize < total,
+                    HasPreviousPage = page > 1
+                });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<PaginatedResponse<ReportDto>>.ErrorResponse($"Error: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<bool>> HidePostAsync(Guid postId, Guid adminId)
+        {
+            try
+            {
+                var post = await _unitOfWork.Posts.GetByIdIgnoringFiltersAsync(postId);
+                if (post == null) return ApiResponse<bool>.ErrorResponse("Post not found");
+
+                post.Hide();
+                await _unitOfWork.Posts.UpdateAsync(post);
+
+                // Đánh dấu các report đang chờ của bài này là đã xử lý
+                var pending = await _unitOfWork.Reports.GetPendingByPostAsync(postId);
+                foreach (var r in pending) r.Resolve(ReportStatus.ActionTaken, adminId);
+
+                await _unitOfWork.SaveChangesAsync();
+                return ApiResponse<bool>.SuccessResponse(true, "Đã ẩn bài viết");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error hiding post: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<bool>> UnhidePostAsync(Guid postId, Guid adminId)
+        {
+            try
+            {
+                var post = await _unitOfWork.Posts.GetByIdIgnoringFiltersAsync(postId);
+                if (post == null) return ApiResponse<bool>.ErrorResponse("Post not found");
+
+                post.Unhide();
+                await _unitOfWork.Posts.UpdateAsync(post);
+                await _unitOfWork.SaveChangesAsync();
+                return ApiResponse<bool>.SuccessResponse(true, "Đã khôi phục bài viết");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error unhiding post: {ex.Message}");
+            }
+        }
+
+        public async Task<ApiResponse<bool>> DismissReportAsync(Guid reportId, Guid adminId)
+        {
+            try
+            {
+                var report = await _unitOfWork.Reports.GetByIdAsync(reportId);
+                if (report == null) return ApiResponse<bool>.ErrorResponse("Report not found");
+
+                report.Resolve(ReportStatus.Dismissed, adminId);
+                await _unitOfWork.Reports.UpdateAsync(report);
+                await _unitOfWork.SaveChangesAsync();
+                return ApiResponse<bool>.SuccessResponse(true, "Đã bỏ qua báo cáo");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse($"Error dismissing report: {ex.Message}");
+            }
+        }
+
+        private static ReportStatus? ParseReportStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return null;
+            return status.Trim().ToLowerInvariant() switch
+            {
+                "pending"                            => ReportStatus.Pending,
+                "dismissed"                          => ReportStatus.Dismissed,
+                "actiontaken" or "action_taken"      => ReportStatus.ActionTaken,
+                _                                     => null
+            };
+        }
+
         // Helper methods
         private async Task<PostDto> MapToPostDtoAsync(Domain.Entities.Post post, Guid? currentUserId = null)
         {

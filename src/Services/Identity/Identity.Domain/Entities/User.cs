@@ -26,6 +26,9 @@ namespace Identity.Domain.Entities
         // Lưu trên DB để không phụ thuộc bộ nhớ thiết bị (cold boot máy ảo vẫn giữ đúng trạng thái).
         public bool FirstLogin { get; set; }
 
+        // Quyền quản trị (duyệt báo cáo, ẩn/khôi phục bài). Mặc định false.
+        public bool IsAdmin { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }

@@ -278,7 +278,7 @@ namespace Post.Application.Services
             if (!comment.IsAnonymous)
             {
                 var profile = profiles.FirstOrDefault(p => p.UserId == comment.AuthorId || p.Id == comment.AuthorId);
-                authorName = profile?.Name ?? "Unknown";
+                authorName = profile?.GetDisplayName() ?? "Unknown";
                 authorAvatar = profile?.ProfilePictureUrl;
                 authorId = comment.AuthorId.ToString();
             }
@@ -321,7 +321,7 @@ namespace Post.Application.Services
             if (!post.IsAnonymous && post.AuthorId.HasValue)
             {
                 var profile = await _userProfileClient.GetUserProfileAsync(post.AuthorId.Value);
-                authorName = profile?.Name ?? "Unknown";
+                authorName = profile?.GetDisplayName() ?? "Unknown";
                 authorAvatar = profile?.ProfilePictureUrl;
                 authorId = post.AuthorId.Value.ToString();
             }

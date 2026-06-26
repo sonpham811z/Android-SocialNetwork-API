@@ -33,6 +33,7 @@ namespace Identity.Infrastructure.Services
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
                 new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
+                new Claim("isAdmin", user.IsAdmin ? "true" : "false"), // quyền quản trị
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // id cho token
             };
 

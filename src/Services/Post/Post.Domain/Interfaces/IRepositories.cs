@@ -19,6 +19,10 @@ namespace Post.Domain.Interfaces
         Task UpdateAsync(Entities.Post post);
         Task DeleteAsync(Guid id);
         Task<int> GetUserPostsCountAsync(Guid userId, Guid? currentUserId = null, bool isFriend = false);
+
+        // Admin/moderation: lấy bài kể cả đã ẩn (bỏ qua query filter)
+        Task<Entities.Post?> GetByIdIgnoringFiltersAsync(Guid id);
+        Task<List<Entities.Post>> GetByIdsIgnoringFiltersAsync(List<Guid> ids);
     }
 
     public interface ICommentRepository
@@ -49,6 +53,17 @@ namespace Post.Domain.Interfaces
         Task<bool> HasUserLikedCommentAsync(Guid commentId, Guid userId);
         Task<CommentLike> AddAsync(CommentLike like);
         Task UpdateAsync(CommentLike like);
+    }
+
+    public interface IReportRepository
+    {
+        Task<PostReport?> GetPendingByPostAndReporterAsync(Guid postId, Guid reporterId);
+        Task<PostReport?> GetByIdAsync(Guid id);
+        Task<PostReport> AddAsync(PostReport report);
+        Task UpdateAsync(PostReport report);
+        Task<List<PostReport>> GetReportsAsync(ReportStatus? status, int page, int pageSize);
+        Task<int> CountReportsAsync(ReportStatus? status);
+        Task<List<PostReport>> GetPendingByPostAsync(Guid postId);
     }
 
     public interface ISavedPostRepository
@@ -101,6 +116,7 @@ namespace Post.Domain.Interfaces
         IPostLikeRepository PostLikes { get; }
         ICommentLikeRepository CommentLikes { get; }
         ISavedPostRepository SavedPosts { get; }
+        IReportRepository Reports { get; }
         IStoryRepository Stories { get; }
         IBoardRepository Board { get; }
         Task<int> SaveChangesAsync();

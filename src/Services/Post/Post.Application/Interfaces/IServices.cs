@@ -24,6 +24,13 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<bool>> SavePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> UnsavePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<PaginatedResponse<PostDto>>> GetSavedPostsAsync(Guid userId, int page, int pageSize);
+
+        // Report / moderation
+        Task<ApiResponse<bool>> ReportPostAsync(Guid postId, Guid reporterId, string reason);
+        Task<ApiResponse<PaginatedResponse<ReportDto>>> GetReportsAsync(string? status, int page, int pageSize);
+        Task<ApiResponse<bool>> HidePostAsync(Guid postId, Guid adminId);
+        Task<ApiResponse<bool>> UnhidePostAsync(Guid postId, Guid adminId);
+        Task<ApiResponse<bool>> DismissReportAsync(Guid reportId, Guid adminId);
     }
 
     public interface ICommentService
