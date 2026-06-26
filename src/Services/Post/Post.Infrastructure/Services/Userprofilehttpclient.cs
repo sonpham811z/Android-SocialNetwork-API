@@ -96,6 +96,31 @@ namespace Post.Infrastructure.Services
             return Task.FromResult(true);
         }
 
+        public async Task<Guid?> GetUserIdByUsernameAsync(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username)) return null;
+            try
+            {
+                var url = $"{_userServiceBaseUrl}/api/userprofile/username/{Uri.EscapeDataString(username)}";
+                var response = await _httpClient.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+
+                var content = await response.Content.ReadAsStringAsync();
+                var apiResponse = JsonSerializer.Deserialize<ApiResponse<UserProfileDto>>(content, _jsonOptions);
+                var dto = apiResponse?.Data;
+                if (dto == null) return null;
+
+                if (dto.UserId != Guid.Empty) return dto.UserId;
+                if (dto.Id != Guid.Empty) return dto.Id;
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UserProfileHttpClient] Error resolving username '{username}': {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task<List<Guid>> GetFriendIdsAsync(Guid userId)
         {
             try

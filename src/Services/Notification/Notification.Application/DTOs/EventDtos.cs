@@ -48,4 +48,12 @@ namespace Notification.Application.DTOs
         Guid   UserId,      // commenter
         string Content,
         DateTime Timestamp);
+
+    public record UserMentionedEventDto(
+        string EventType,
+        Guid   PostId,
+        Guid   ActorId,     // người nhắc (tác giả post/comment)
+        Guid   RecipientId, // người được nhắc
+        bool   IsComment,
+        DateTime Timestamp);
 }

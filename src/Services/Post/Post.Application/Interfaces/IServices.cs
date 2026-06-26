@@ -84,6 +84,8 @@ namespace Post.Application.Interfaces
         Task<List<UserProfileDto>> GetUserProfilesAsync(List<Guid> userIds);
         Task<List<Guid>> GetFriendIdsAsync(Guid userId);
         Task<bool> UpdatePostsCountAsync(Guid userId, int count);
+        /// <summary>Tra cứu userId (auth id) theo username, null nếu không có.</summary>
+        Task<Guid?> GetUserIdByUsernameAsync(string username);
     }
 
     public interface IMessagePublisher
@@ -92,5 +94,6 @@ namespace Post.Application.Interfaces
         Task PublishPostDeletedAsync(Guid postId, Guid userId);
         Task PublishCommentCreatedAsync(Guid commentId, Guid postId, Guid userId, string content);
         Task PublishPostLikedAsync(Guid postId, Guid userId);
+        Task PublishUserMentionedAsync(Guid postId, Guid actorId, Guid recipientId, bool isComment);
     }
 }
