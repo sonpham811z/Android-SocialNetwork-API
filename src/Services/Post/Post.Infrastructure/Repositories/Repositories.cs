@@ -117,6 +117,13 @@ namespace Post.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<int> GetPublicPostsCountAsync()
+        {
+            return await _context.Posts
+                .Where(p => p.Visibility == PostVisibility.Public)
+                .CountAsync();
+        }
+
         public async Task<Domain.Entities.Post> AddAsync(Domain.Entities.Post post)
         {
             await _context.Posts.AddAsync(post);

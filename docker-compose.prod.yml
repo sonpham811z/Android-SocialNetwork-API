@@ -40,6 +40,9 @@ services:
       Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
       Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
       Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
+      # AI viết caption (Claude / Anthropic) — key giữ ở server, không lộ ra app
+      Anthropic__ApiKey: ${ANTHROPIC_API_KEY}
+      Anthropic__Model: ${ANTHROPIC_MODEL:-claude-haiku-4-5}
 
   message:
     image: ghcr.io/${IMAGE_OWNER}/socialnet-message:${IMAGE_TAG:-latest}

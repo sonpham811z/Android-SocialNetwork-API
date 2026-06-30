@@ -15,6 +15,7 @@ namespace Post.Domain.Interfaces
         Task<int> GetFeedPostsCountAsync(List<Guid> userIds, Guid currentUserId);
         Task<IEnumerable<Entities.Post>> GetFeedPostsCursorAsync(List<Guid> userIds, DateTime? lastPostCreatedAt,  Guid? lastPostId, int pageSize);
         Task<IEnumerable<Entities.Post>> GetAllPostsAsync(int page, int pageSize);
+        Task<int> GetPublicPostsCountAsync();
         Task<Entities.Post> AddAsync(Entities.Post post);
         Task UpdateAsync(Entities.Post post);
         Task DeleteAsync(Guid id);
