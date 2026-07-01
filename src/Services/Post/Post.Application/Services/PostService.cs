@@ -101,9 +101,21 @@ namespace Post.Application.Services
                     feedUserIds.Add(currentUserId);
                 }
 
-                var posts = await _unitOfWork.Posts.GetFeedPostsAsync(feedUserIds, currentUserId, page, pageSize);
                 var totalCount = await _unitOfWork.Posts.GetFeedPostsCountAsync(feedUserIds, currentUserId);
-                
+
+                IEnumerable<Domain.Entities.Post> posts;
+                if (totalCount == 0)
+                {
+                    // Cold-start: user chưa có bạn (hoặc bạn chưa đăng bài) → hiển thị
+                    // các bài Public của mọi người (chế độ "Khám phá") để feed không trống.
+                    posts = await _unitOfWork.Posts.GetAllPostsAsync(page, pageSize);
+                    totalCount = await _unitOfWork.Posts.GetPublicPostsCountAsync();
+                }
+                else
+                {
+                    posts = await _unitOfWork.Posts.GetFeedPostsAsync(feedUserIds, currentUserId, page, pageSize);
+                }
+
                 var postDtos = new List<PostDto>();
                 foreach (var post in posts)
                 {

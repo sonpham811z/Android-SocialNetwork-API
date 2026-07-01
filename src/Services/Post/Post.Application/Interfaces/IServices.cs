@@ -88,6 +88,12 @@ namespace Post.Application.Interfaces
         Task<Guid?> GetUserIdByUsernameAsync(string username);
     }
 
+    /// <summary>Sinh / cải thiện caption bài viết bằng Claude (Anthropic).</summary>
+    public interface IAiCaptionService
+    {
+        Task<ApiResponse<AiCaptionResultDto>> GenerateCaptionAsync(AiCaptionRequestDto request);
+    }
+
     public interface IMessagePublisher
     {
         Task PublishPostCreatedAsync(Guid postId, Guid userId, string content);

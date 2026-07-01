@@ -16,11 +16,35 @@ namespace Post.API.Controllers
     {
         private readonly IPostService _postService;
         private readonly ICommentService _commentService;
+        private readonly IAiCaptionService _aiCaptionService;
 
-        public PostController(IPostService postService, ICommentService commentService)
+        public PostController(
+            IPostService postService,
+            ICommentService commentService,
+            IAiCaptionService aiCaptionService)
         {
             _postService = postService;
             _commentService = commentService;
+            _aiCaptionService = aiCaptionService;
+        }
+
+        /// <summary>
+        /// Sinh / cải thiện caption bài viết bằng AI (Claude).
+        /// </summary>
+        [Authorize]
+        [HttpPost("ai/caption")]
+        [ProducesResponseType(typeof(ApiResponse<AiCaptionResultDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GenerateCaption([FromBody] AiCaptionRequestDto dto)
+        {
+            // Yêu cầu đăng nhập để tránh lạm dụng API key.
+            _ = GetCurrentUserId();
+
+            var result = await _aiCaptionService.GenerateCaptionAsync(dto);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         /// <summary>
