@@ -132,6 +132,10 @@ jobs:
             # ── Agora (voice/video call - Message service) ─────────────────────
             AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
             AGORA_APP_CERTIFICATE=${{ secrets.AGORA_APP_CERTIFICATE }}
+
+            # ── Groq (AI viết caption - Post service) ──────────────────────────
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+            GROQ_MODEL=openai/gpt-oss-120b
             ENVEOF
 
             # ── Firebase service-account key (for Notification service push/FCM) ──

@@ -130,6 +130,9 @@ builder.Services.AddHttpContextAccessor();
 // Register HTTP Client for User Service
 builder.Services.AddHttpClient<IUserProfileHttpClient, UserProfileHttpClient>();
 
+// Register HTTP Client for AI caption (Claude / Anthropic)
+builder.Services.AddHttpClient<IAiCaptionService, AiCaptionService>();
+
 // Health checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PostDbContext>();
