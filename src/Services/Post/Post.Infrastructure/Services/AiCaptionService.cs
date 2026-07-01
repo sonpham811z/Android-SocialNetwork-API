@@ -11,14 +11,13 @@ using Post.Application.Interfaces;
 namespace Post.Infrastructure.Services
 {
     /// <summary>
-    /// Gọi Claude Messages API (Anthropic) để sinh / cải thiện caption.
-    /// API key được giữ ở server (config "Anthropic:ApiKey"), KHÔNG bao giờ lộ ra app Flutter.
+    /// Gọi Groq API (OpenAI-compatible) để sinh / cải thiện caption.
+    /// API key được giữ ở server (config "Groq:ApiKey"), KHÔNG bao giờ lộ ra app Flutter.
     /// Dùng HttpClient thuần để không thêm dependency và đồng nhất với UserProfileHttpClient.
     /// </summary>
     public class AiCaptionService : IAiCaptionService
     {
-        private const string AnthropicEndpoint = "https://api.anthropic.com/v1/messages";
-        private const string AnthropicVersion = "2023-06-01";
+        private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
 
         private readonly HttpClient _httpClient;
         private readonly string? _apiKey;
@@ -28,9 +27,9 @@ namespace Post.Infrastructure.Services
         public AiCaptionService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _apiKey = configuration["Anthropic:ApiKey"];
-            // Claude Haiku 4.5 — nhanh & rẻ, hợp tác vụ viết caption ngắn.
-            _model = configuration["Anthropic:Model"] ?? "claude-haiku-4-5";
+            _apiKey = configuration["Groq:ApiKey"];
+            // gpt-oss-120b trên Groq — nhanh & rẻ, hợp tác vụ viết caption ngắn.
+            _model = configuration["Groq:Model"] ?? "openai/gpt-oss-120b";
         }
 
         public async Task<ApiResponse<AiCaptionResultDto>> GenerateCaptionAsync(AiCaptionRequestDto request)
@@ -38,7 +37,7 @@ namespace Post.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(_apiKey))
             {
                 return ApiResponse<AiCaptionResultDto>.ErrorResponse(
-                    "Tính năng AI chưa được cấu hình (thiếu Anthropic API key).");
+                    "Tính năng AI chưa được cấu hình (thiếu Groq API key).");
             }
 
             var isImprove = string.Equals(request.Mode, "improve", StringComparison.OrdinalIgnoreCase);
@@ -64,28 +63,29 @@ namespace Post.Infrastructure.Services
                 var payload = new
                 {
                     model = _model,
-                    max_tokens = 512,
-                    system = systemPrompt,
+                    max_completion_tokens = 1024,
+                    // gpt-oss là model reasoning — để "low" cho nhanh & rẻ với tác vụ ngắn.
+                    reasoning_effort = "low",
                     messages = new[]
                     {
+                        new { role = "system", content = systemPrompt },
                         new { role = "user", content = userPrompt }
                     }
                 };
 
-                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, AnthropicEndpoint)
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, GroqEndpoint)
                 {
                     Content = new StringContent(
                         JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
                 };
-                httpRequest.Headers.TryAddWithoutValidation("x-api-key", _apiKey);
-                httpRequest.Headers.TryAddWithoutValidation("anthropic-version", AnthropicVersion);
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
                 using var response = await _httpClient.SendAsync(httpRequest);
                 var body = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[AiCaptionService] Anthropic -> {(int)response.StatusCode}. Body: {body}");
+                    Console.WriteLine($"[AiCaptionService] Groq -> {(int)response.StatusCode}. Body: {body}");
                     return ApiResponse<AiCaptionResultDto>.ErrorResponse("Không tạo được caption, vui lòng thử lại.");
                 }
 
@@ -105,29 +105,27 @@ namespace Post.Infrastructure.Services
             }
         }
 
-        /// <summary>Lấy text từ content[] của Messages API (gộp mọi block type="text").</summary>
+        /// <summary>Lấy text từ choices[0].message.content (định dạng OpenAI/Groq).</summary>
         private string ExtractText(string responseBody)
         {
             try
             {
                 using var doc = JsonDocument.Parse(responseBody);
-                if (!doc.RootElement.TryGetProperty("content", out var content)
-                    || content.ValueKind != JsonValueKind.Array)
+                if (!doc.RootElement.TryGetProperty("choices", out var choices)
+                    || choices.ValueKind != JsonValueKind.Array
+                    || choices.GetArrayLength() == 0)
                 {
                     return string.Empty;
                 }
 
-                var sb = new StringBuilder();
-                foreach (var block in content.EnumerateArray())
+                var first = choices[0];
+                if (first.TryGetProperty("message", out var message)
+                    && message.TryGetProperty("content", out var content)
+                    && content.ValueKind == JsonValueKind.String)
                 {
-                    if (block.TryGetProperty("type", out var type)
-                        && type.GetString() == "text"
-                        && block.TryGetProperty("text", out var text))
-                    {
-                        sb.Append(text.GetString());
-                    }
+                    return content.GetString() ?? string.Empty;
                 }
-                return sb.ToString();
+                return string.Empty;
             }
             catch (Exception ex)
             {
