@@ -32,7 +32,10 @@ namespace Post.Domain.Entities
         public DateTime? UpdatedAt { get; private set; }
         public bool IsDeleted { get; private set; }
         public DateTime? DeletedAt { get; private set; }
-        
+
+        // Moderation: admin ẩn bài (tách biệt với IsDeleted do chủ post xoá)
+        public bool IsHidden { get; private set; }
+
         // Privacy
         public PostVisibility Visibility { get; private set; }
 
@@ -297,6 +300,19 @@ namespace Post.Domain.Entities
         {
             IsDeleted = false;
             DeletedAt = null;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        // ── Moderation (admin) ────────────────────────────────────────────────
+        public void Hide()
+        {
+            IsHidden = true;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Unhide()
+        {
+            IsHidden = false;
             UpdatedAt = DateTime.UtcNow;
         }
         

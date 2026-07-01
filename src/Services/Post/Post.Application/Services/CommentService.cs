@@ -102,6 +102,11 @@ namespace Post.Application.Services
                 // Publish event → Notification service tạo thông báo cho chủ bài viết
                 await _messagePublisher.PublishCommentCreatedAsync(comment.Id, postId, userId, comment.Content);
 
+                // Thông báo cho những người được @nhắc trong bình luận
+                await MentionHelper.PublishMentionsAsync(
+                    comment.Content, postId, userId, isComment: true,
+                    _userProfileClient, _messagePublisher);
+
                 var commentDto = await MapToCommentDtoAsync(comment);
                 return ApiResponse<CommentDto>.SuccessResponse(commentDto, "Comment created successfully");
             }

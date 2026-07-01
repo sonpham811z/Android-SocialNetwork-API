@@ -24,6 +24,13 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<bool>> SavePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<bool>> UnsavePostAsync(Guid postId, Guid userId);
         Task<ApiResponse<PaginatedResponse<PostDto>>> GetSavedPostsAsync(Guid userId, int page, int pageSize);
+
+        // Report / moderation
+        Task<ApiResponse<bool>> ReportPostAsync(Guid postId, Guid reporterId, string reason);
+        Task<ApiResponse<PaginatedResponse<ReportDto>>> GetReportsAsync(string? status, int page, int pageSize);
+        Task<ApiResponse<bool>> HidePostAsync(Guid postId, Guid adminId);
+        Task<ApiResponse<bool>> UnhidePostAsync(Guid postId, Guid adminId);
+        Task<ApiResponse<bool>> DismissReportAsync(Guid reportId, Guid adminId);
     }
 
     public interface ICommentService
@@ -77,6 +84,8 @@ namespace Post.Application.Interfaces
         Task<List<UserProfileDto>> GetUserProfilesAsync(List<Guid> userIds);
         Task<List<Guid>> GetFriendIdsAsync(Guid userId);
         Task<bool> UpdatePostsCountAsync(Guid userId, int count);
+        /// <summary>Tra cứu userId (auth id) theo username, null nếu không có.</summary>
+        Task<Guid?> GetUserIdByUsernameAsync(string username);
     }
 
     public interface IMessagePublisher
@@ -85,5 +94,6 @@ namespace Post.Application.Interfaces
         Task PublishPostDeletedAsync(Guid postId, Guid userId);
         Task PublishCommentCreatedAsync(Guid commentId, Guid postId, Guid userId, string content);
         Task PublishPostLikedAsync(Guid postId, Guid userId);
+        Task PublishUserMentionedAsync(Guid postId, Guid actorId, Guid recipientId, bool isComment);
     }
 }

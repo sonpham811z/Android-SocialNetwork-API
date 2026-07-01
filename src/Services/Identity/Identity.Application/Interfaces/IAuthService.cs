@@ -12,6 +12,8 @@ namespace Identity.Application.Interfaces
         Task<ApiResponse<AuthResponseDto>> RefreshTokenAsync(string token, string ipAddress);
         Task<ApiResponse<bool>> VerifyEmailAsync(string token);
         Task<ApiResponse<bool>> ResendVerificationEmailAsync(ResendVerificationDto dto);
+        Task<ApiResponse<UserDto>> GetCurrentUserAsync(Guid userId);
+        Task<ApiResponse<bool>> CompleteIntroAsync(Guid userId);
         Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordDto dto);
         Task<ApiResponse<bool>> ResetPasswordAsync(ResetPasswordDto dto);
         Task<ApiResponse<bool>> ChangePasswordAsync(Guid userId, ChangePasswordDto dto);

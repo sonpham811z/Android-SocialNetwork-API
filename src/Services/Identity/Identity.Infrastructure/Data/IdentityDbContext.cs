@@ -30,6 +30,8 @@ namespace Identity.Infrastructure.Data
                 entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Gender).HasMaxLength(20);
+                entity.Property(e => e.FirstLogin).HasDefaultValue(true);
+                entity.Property(e => e.IsAdmin).HasDefaultValue(false);
             });
 
             // RefreshToken Configuration

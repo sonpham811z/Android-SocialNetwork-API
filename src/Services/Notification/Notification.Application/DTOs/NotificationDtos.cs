@@ -21,6 +21,12 @@ namespace Notification.Application.DTOs
         public string Platform { get; init; } = string.Empty;  // "android" | "ios" | "web"
     }
 
+    /// <summary>Client sends the user Ids it cares about; server returns which are online.</summary>
+    public class PresenceQueryDto
+    {
+        public List<Guid> UserIds { get; init; } = [];
+    }
+
     /// <summary>
     /// A recipient's notification preferences, fetched from the User service.
     /// Mirrors the toggles on the client's notification-settings screen.
