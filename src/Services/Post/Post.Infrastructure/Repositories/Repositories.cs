@@ -117,6 +117,25 @@ namespace Post.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Domain.Entities.Post>> SearchPostsAsync(string query, int page, int pageSize)
+        {
+            var pattern = $"%{query}%";
+            return await _context.Posts
+                .Where(p => p.Visibility == PostVisibility.Public && EF.Functions.ILike(p.Content, pattern))
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountSearchPostsAsync(string query)
+        {
+            var pattern = $"%{query}%";
+            return await _context.Posts
+                .Where(p => p.Visibility == PostVisibility.Public && EF.Functions.ILike(p.Content, pattern))
+                .CountAsync();
+        }
+
         public async Task<int> GetPublicPostsCountAsync()
         {
             return await _context.Posts

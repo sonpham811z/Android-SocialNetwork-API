@@ -16,6 +16,10 @@ namespace Post.Domain.Interfaces
         Task<IEnumerable<Entities.Post>> GetFeedPostsCursorAsync(List<Guid> userIds, DateTime? lastPostCreatedAt,  Guid? lastPostId, int pageSize);
         Task<IEnumerable<Entities.Post>> GetAllPostsAsync(int page, int pageSize);
         Task<int> GetPublicPostsCountAsync();
+
+        // Tìm kiếm bài viết Public theo nội dung (dùng cho search + hashtag)
+        Task<IEnumerable<Entities.Post>> SearchPostsAsync(string query, int page, int pageSize);
+        Task<int> CountSearchPostsAsync(string query);
         Task<Entities.Post> AddAsync(Entities.Post post);
         Task UpdateAsync(Entities.Post post);
         Task DeleteAsync(Guid id);

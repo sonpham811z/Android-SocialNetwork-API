@@ -99,6 +99,22 @@ namespace Post.API.Controllers
         }
 
         /// <summary>
+        /// Tìm kiếm bài viết Public theo nội dung (hỗ trợ cả #hashtag).
+        /// </summary>
+        [Authorize]
+        [HttpGet("search")]
+        [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<PostDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchPosts(
+            [FromQuery] string q,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            Guid? currentUserId = User.Identity?.IsAuthenticated == true ? GetCurrentUserId() : null;
+            var result = await _postService.SearchPostsAsync(q, page, pageSize, currentUserId);
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Create a text post
         /// </summary>
         [Authorize]

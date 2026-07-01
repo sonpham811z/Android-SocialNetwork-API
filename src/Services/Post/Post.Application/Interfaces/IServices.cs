@@ -11,6 +11,7 @@ namespace Post.Application.Interfaces
         Task<ApiResponse<PostDto>> GetPostByIdAsync(Guid postId, Guid? currentUserId = null);
         Task<ApiResponse<PaginatedResponse<PostDto>>> GetUserPostsAsync(Guid userId, int page, int pageSize, Guid? currentUserId = null);
         Task<ApiResponse<PaginatedResponse<PostDto>>> GetFeedAsync(Guid currentUserId, int page, int pageSize);
+        Task<ApiResponse<PaginatedResponse<PostDto>>> SearchPostsAsync(string query, int page, int pageSize, Guid? currentUserId = null);
         Task<ApiResponse<PostDto>> CreateTextPostAsync(Guid userId, CreateTextPostDto dto);
         Task<ApiResponse<PostDto>> CreateImagePostAsync(Guid userId, CreateImagePostDto dto, IFormFile image);
         Task<ApiResponse<PostDto>> CreateVoicePostAsync(Guid userId, CreateVoicePostDto dto, IFormFile audio);

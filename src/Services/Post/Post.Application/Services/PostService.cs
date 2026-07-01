@@ -142,6 +142,54 @@ namespace Post.Application.Services
             }
         }
 
+        public async Task<ApiResponse<PaginatedResponse<PostDto>>> SearchPostsAsync(
+            string query, int page, int pageSize, Guid? currentUserId = null)
+        {
+            try
+            {
+                query = (query ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    return ApiResponse<PaginatedResponse<PostDto>>.SuccessResponse(new PaginatedResponse<PostDto>
+                    {
+                        Items = new List<PostDto>(),
+                        TotalItems = 0,
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalPages = 0,
+                        HasNextPage = false,
+                        HasPreviousPage = false
+                    });
+                }
+
+                var totalCount = await _unitOfWork.Posts.CountSearchPostsAsync(query);
+                var posts = await _unitOfWork.Posts.SearchPostsAsync(query, page, pageSize);
+
+                var postDtos = new List<PostDto>();
+                foreach (var post in posts)
+                {
+                    postDtos.Add(await MapToPostDtoAsync(post, currentUserId));
+                }
+
+                var response = new PaginatedResponse<PostDto>
+                {
+                    Items = postDtos,
+                    TotalItems = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    HasNextPage = page * pageSize < totalCount,
+                    HasPreviousPage = page > 1
+                };
+
+                return ApiResponse<PaginatedResponse<PostDto>>.SuccessResponse(response);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<PaginatedResponse<PostDto>>.ErrorResponse($"Error searching posts: {ex.Message}");
+            }
+        }
+
         public async Task<ApiResponse<PostDto>> CreateTextPostAsync(Guid userId, CreateTextPostDto dto)
         {
             try
